@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 import { apiFetch, readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Delivery, MessageDetail } from "@/lib/types";
 
-export default function MessageDetailPage({ params }: { params: { id: string } }) {
+export default function MessageDetailPage() {
   const auth = useAuth();
-  const id = params.id;
+  const params = useParams<{ id?: string | string[] }>();
+  const rawId = params?.id;
+  const id = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] ?? "" : "";
   const [msg, setMsg] = useState<MessageDetail | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +20,17 @@ export default function MessageDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     (async () => {
+      if (!id) {
+        setError("Missing message id.");
+        setLoading(false);
+        return;
+      }
+
+      if (!auth.accessToken) {
+        setLoading(true);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       const [mRes, dRes] = await Promise.all([

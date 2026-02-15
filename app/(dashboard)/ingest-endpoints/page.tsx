@@ -159,6 +159,7 @@ export default function IngestEndpointsPage() {
                       className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
                       disabled={revoked || !canCreate}
                       onClick={async () => {
+                        if (!confirm("Revoke this ingest endpoint?")) return;
                         setError(null);
                         const res = await apiFetch(`/api/ingest-endpoints/${ep.id}/revoke`, {
                           method: "POST",

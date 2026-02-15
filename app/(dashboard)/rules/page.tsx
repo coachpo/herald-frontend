@@ -71,6 +71,12 @@ export default function RulesPage() {
     [rules],
   );
 
+  const channelNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of channels) m.set(c.id, c.name);
+    return m;
+  }, [channels]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -280,7 +286,9 @@ export default function RulesPage() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-1 text-xs text-zinc-600">Channel: {r.channel_id}</div>
+                <div className="mt-1 text-xs text-zinc-600">
+                  Channel: {channelNameById.get(r.channel_id) ?? r.channel_id}
+                </div>
               </div>
             ))}
           </div>

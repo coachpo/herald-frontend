@@ -1,9 +1,10 @@
 import { VerifyEmailClient } from "@/components/VerifyEmailClient";
 
-export default function VerifyEmailPage({
+export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams?: { token?: string };
+  searchParams?: Promise<{ token?: string }> | { token?: string };
 }) {
-  return <VerifyEmailClient token={searchParams?.token ?? null} />;
+  const sp = await searchParams;
+  return <VerifyEmailClient token={sp?.token ?? null} />;
 }

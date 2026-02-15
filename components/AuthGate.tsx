@@ -11,7 +11,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { loading, user, refresh } = useAuth();
 
   useEffect(() => {
-    void refresh();
+    const refreshTimer = setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => clearTimeout(refreshTimer);
   }, [refresh]);
 
   useEffect(() => {

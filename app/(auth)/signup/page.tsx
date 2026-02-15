@@ -58,6 +58,8 @@ export default function SignupPage() {
               <input
                 className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -68,6 +70,8 @@ export default function SignupPage() {
               <input
                 className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
                 type="password"
+                name="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
