@@ -8,7 +8,7 @@ import type { IngestEndpoint } from "@/lib/types";
 
 type CreateResp = {
   endpoint: IngestEndpoint;
-  token: string;
+  ingest_key: string;
   ingest_url: string;
 };
 
@@ -55,7 +55,7 @@ export default function IngestEndpointsPage() {
         <div>
           <div className="text-lg font-semibold tracking-tight">Ingest endpoints</div>
           <div className="mt-1 text-sm text-muted-foreground">
-            Tokens embedded in URLs; shown only once on create.
+            URL identifies the endpoint; the ingest key is sent in a header.
           </div>
         </div>
       </div>
@@ -71,9 +71,9 @@ export default function IngestEndpointsPage() {
           <div className="text-sm font-semibold text-emerald-900">Endpoint created</div>
           <div className="mt-2 grid gap-2 text-sm">
             <div>
-              <div className="text-xs font-medium text-emerald-900/80">Token (copy now)</div>
+              <div className="text-xs font-medium text-emerald-900/80">Ingest key (copy now)</div>
               <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
-                {created.token}
+                {created.ingest_key}
               </div>
             </div>
             <div>
@@ -81,6 +81,12 @@ export default function IngestEndpointsPage() {
               <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_url}
               </div>
+            </div>
+            <div>
+              <div className="text-xs font-medium text-emerald-900/80">curl</div>
+              <pre className="mt-1 overflow-auto rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
+                {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`}
+              </pre>
             </div>
           </div>
           <button

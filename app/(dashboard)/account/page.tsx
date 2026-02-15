@@ -17,6 +17,10 @@ export default function AccountPage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
   async function callNoBody(path: string) {
     setError(null);
     setMessage(null);
@@ -144,6 +148,61 @@ export default function AccountPage() {
           }}
         >
           Change password
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/60 dark:bg-rose-950/35">
+        <div className="text-sm font-semibold text-rose-900 dark:text-rose-200">Delete account</div>
+        <div className="mt-1 text-sm text-rose-900/80 dark:text-rose-200/80">
+          Irreversible. Deletes your account and all messages, endpoints, channels, rules, and deliveries.
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <input
+            className="rounded-xl border border-rose-200 bg-card px-3 py-2 text-sm text-foreground placeholder:text-rose-900/50 dark:border-rose-900/60 dark:placeholder:text-rose-200/50"
+            type="password"
+            placeholder="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            disabled={deleteBusy}
+          />
+          <input
+            className="rounded-xl border border-rose-200 bg-card px-3 py-2 text-sm text-foreground placeholder:text-rose-900/50 dark:border-rose-900/60 dark:placeholder:text-rose-200/50"
+            placeholder="type DELETE"
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            disabled={deleteBusy}
+          />
+        </div>
+
+        <button
+          className="mt-3 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+          disabled={deleteBusy || !deletePassword || deleteConfirm.trim() !== "DELETE"}
+          onClick={async () => {
+            if (!confirm("Delete your account? This cannot be undone.")) return;
+            setError(null);
+            setMessage(null);
+            setDeleteBusy(true);
+            try {
+              const res = await apiFetch("/api/auth/delete-account", {
+                method: "POST",
+                accessToken: auth.accessToken,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: deletePassword, confirm: deleteConfirm }),
+              });
+              if (!res.ok) {
+                setError((await readApiError(res)).message);
+                return;
+              }
+              setMessage("Account deleted.");
+              await auth.logout();
+              window.location.href = "/signup";
+            } finally {
+              setDeleteBusy(false);
+            }
+          }}
+        >
+          Delete account
         </button>
       </div>
     </div>
