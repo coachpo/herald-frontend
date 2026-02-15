@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -19,17 +20,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <header className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
+        <header className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <div className="text-sm font-semibold tracking-tight">Beacon Spear</div>
-            <div className="text-xs text-zinc-500">Ingest, store, forward.</div>
+            <div className="text-xs text-muted-foreground">Ingest, store, forward.</div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-xs text-zinc-600">{user?.email}</div>
+            <ThemeToggle />
+            <div className="text-xs text-muted-foreground">{user?.email}</div>
             <button
-              className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium hover:bg-zinc-50"
+              className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium hover:bg-muted"
               onClick={() => void logout()}
             >
               Log out
@@ -38,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
-          <nav className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
+          <nav className="rounded-2xl border border-border bg-card p-3 shadow-sm">
             <ul className="flex flex-col gap-1">
               {NAV.map((item) => {
                 const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
@@ -49,8 +51,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       className={
                         "block rounded-xl px-3 py-2 text-sm transition-colors " +
                         (active
-                          ? "bg-zinc-900 text-white"
-                          : "text-zinc-700 hover:bg-zinc-50")
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted")
                       }
                     >
                       {item.label}
@@ -61,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </ul>
           </nav>
 
-          <main className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <main className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             {children}
           </main>
         </div>

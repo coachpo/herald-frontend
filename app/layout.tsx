@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Beacon Spear",
-  description: "Ingest raw messages, forward to Bark.",
+  description: "Ingest raw messages, forward to channels.",
 };
 
 export default function RootLayout({
@@ -23,10 +24,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){
+  try {
+    var key = "beacon_theme";
+    var t = localStorage.getItem(key);
+    if (t === "light" || t === "dark") {
+      document.documentElement.setAttribute("data-theme", t);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  } catch (e) {}
+})();`}
+        </Script>
         {children}
       </body>
     </html>

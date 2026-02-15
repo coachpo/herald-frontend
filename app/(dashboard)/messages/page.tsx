@@ -73,30 +73,30 @@ export default function MessagesPage() {
     <div className="space-y-6">
       <div>
         <div className="text-lg font-semibold tracking-tight">Messages</div>
-        <div className="mt-1 text-sm text-zinc-600">Ingested payloads are stored as plain text.</div>
+        <div className="mt-1 text-sm text-muted-foreground">Ingested payloads are stored as plain text.</div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
           {error}
         </div>
       )}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label className="block">
-            <div className="text-xs font-medium text-zinc-700">Search</div>
+            <div className="text-xs font-medium text-muted-foreground">Search</div>
             <input
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="substring"
             />
           </label>
           <label className="block">
-            <div className="text-xs font-medium text-zinc-700">Endpoint</div>
+            <div className="text-xs font-medium text-muted-foreground">Endpoint</div>
             <select
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               value={filterEndpointId}
               onChange={(e) => setFilterEndpointId(e.target.value)}
             >
@@ -111,21 +111,21 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-sm font-semibold">Batch delete</div>
-        <div className="mt-1 text-sm text-zinc-600">Soft-delete messages older than N days.</div>
+        <div className="mt-1 text-sm text-muted-foreground">Soft-delete messages older than N days.</div>
 
         {batchMessage && (
-          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
             {batchMessage}
           </div>
         )}
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           <label className="block">
-            <div className="text-xs font-medium text-zinc-700">Older than (days)</div>
+            <div className="text-xs font-medium text-muted-foreground">Older than (days)</div>
             <input
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               type="number"
               min={1}
               max={36500}
@@ -135,9 +135,9 @@ export default function MessagesPage() {
             />
           </label>
           <label className="block md:col-span-2">
-            <div className="text-xs font-medium text-zinc-700">Scope endpoint (optional)</div>
+            <div className="text-xs font-medium text-muted-foreground">Scope endpoint (optional)</div>
             <select
-              className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               value={batchEndpointId}
               onChange={(e) => setBatchEndpointId(e.target.value)}
               disabled={!canMutate}
@@ -153,7 +153,7 @@ export default function MessagesPage() {
         </div>
 
         <button
-          className="mt-3 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+          className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           disabled={!canMutate || !olderThanDays || olderThanDays < 1}
           onClick={async () => {
             setError(null);
@@ -180,18 +180,18 @@ export default function MessagesPage() {
           Delete
         </button>
         {!canMutate && (
-          <div className="mt-2 text-xs text-amber-700">Verify your email to delete messages.</div>
+          <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">Verify your email to delete messages.</div>
         )}
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3 text-sm font-semibold">Recent</div>
+      <div className="rounded-2xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3 text-sm font-semibold">Recent</div>
         {loading ? (
-          <div className="px-4 py-6 text-sm text-zinc-600">Loading...</div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">Loading...</div>
         ) : items.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-zinc-600">No messages yet.</div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">No messages yet.</div>
         ) : (
-          <div className="divide-y divide-zinc-200">
+          <div className="divide-y divide-border">
             {items.map((m) => {
               const ep = epById.get(m.ingest_endpoint_id);
               const d = m.deliveries;
@@ -200,21 +200,21 @@ export default function MessagesPage() {
                 <Link
                   key={m.id}
                   href={`/messages/${m.id}`}
-                  className="block px-4 py-3 hover:bg-zinc-50"
+                  className="block px-4 py-3 hover:bg-muted"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-sm font-medium text-zinc-900">
+                      <div className="text-sm font-medium text-foreground">
                         {ep ? ep.name : m.ingest_endpoint_id}
                       </div>
-                      <div className="mt-1 truncate text-sm text-zinc-700">
+                      <div className="mt-1 truncate text-sm text-muted-foreground">
                         {m.payload_preview}
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-muted-foreground">
                         {new Date(m.received_at).toLocaleString()}
                       </div>
                     </div>
-                    <div className="shrink-0 text-right text-xs text-zinc-600">
+                    <div className="shrink-0 text-right text-xs text-muted-foreground">
                       <div>
                         sent {d.sent} · failed {d.failed}
                       </div>

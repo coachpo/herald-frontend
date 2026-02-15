@@ -21,7 +21,7 @@ export type IngestEndpoint = {
 
 export type Channel = {
   id: string;
-  type: "bark";
+  type: "bark" | "ntfy" | "mqtt";
   name: string;
   created_at: string;
   disabled_at: string | null;
@@ -34,12 +34,36 @@ export type BarkChannelConfig = {
   default_payload_json?: Record<string, unknown>;
 };
 
+export type NtfyChannelConfig = {
+  server_base_url: string;
+  topic: string;
+  access_token?: string | null;
+  username?: string | null;
+  password?: string | null;
+  default_headers_json?: Record<string, unknown>;
+};
+
+export type MqttChannelConfig = {
+  broker_host: string;
+  broker_port?: number | null;
+  topic: string;
+  username?: string | null;
+  password?: string | null;
+  tls?: boolean | null;
+  tls_insecure?: boolean | null;
+  qos?: number | null;
+  retain?: boolean | null;
+  client_id?: string | null;
+  keepalive_seconds?: number | null;
+};
+
 export type Rule = {
   id: string;
   name: string;
   enabled: boolean;
   channel_id: string;
   filter: Record<string, unknown>;
+  payload_template: Record<string, unknown>;
   bark_payload_template: Record<string, unknown>;
   created_at: string;
   updated_at: string;

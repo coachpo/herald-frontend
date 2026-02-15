@@ -54,37 +54,37 @@ export default function IngestEndpointsPage() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <div className="text-lg font-semibold tracking-tight">Ingest endpoints</div>
-          <div className="mt-1 text-sm text-zinc-600">
+          <div className="mt-1 text-sm text-muted-foreground">
             Tokens embedded in URLs; shown only once on create.
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
           {error}
         </div>
       )}
 
       {created && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30">
           <div className="text-sm font-semibold text-emerald-900">Endpoint created</div>
           <div className="mt-2 grid gap-2 text-sm">
             <div>
               <div className="text-xs font-medium text-emerald-900/80">Token (copy now)</div>
-              <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-white px-3 py-2 font-mono text-xs">
+              <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.token}
               </div>
             </div>
             <div>
               <div className="text-xs font-medium text-emerald-900/80">Ingest URL</div>
-              <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-white px-3 py-2 font-mono text-xs">
+              <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_url}
               </div>
             </div>
           </div>
           <button
-            className="mt-3 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100"
+            className="mt-3 rounded-xl border border-emerald-200 bg-card px-3 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100"
             onClick={() => setCreated(null)}
           >
             Dismiss
@@ -92,18 +92,18 @@ export default function IngestEndpointsPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-sm font-semibold">Create endpoint</div>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
-            className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={!canCreate}
           />
           <button
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!canCreate || !name.trim()}
             onClick={async () => {
               setError(null);
@@ -128,27 +128,27 @@ export default function IngestEndpointsPage() {
           </button>
         </div>
         {!canCreate && (
-          <div className="mt-2 text-xs text-amber-700">
+          <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">
             Verify your email to create endpoints.
           </div>
         )}
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3 text-sm font-semibold">Endpoints</div>
+      <div className="rounded-2xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3 text-sm font-semibold">Endpoints</div>
         {loading ? (
-          <div className="px-4 py-6 text-sm text-zinc-600">Loading...</div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">Loading...</div>
         ) : sorted.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-zinc-600">No endpoints yet.</div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">No endpoints yet.</div>
         ) : (
-          <div className="divide-y divide-zinc-200">
+          <div className="divide-y divide-border">
             {sorted.map((ep) => {
               const revoked = Boolean(ep.revoked_at);
               return (
                 <div key={ep.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="text-sm font-medium text-zinc-900">{ep.name}</div>
-                    <div className="mt-1 text-xs text-zinc-600">
+                    <div className="text-sm font-medium text-foreground">{ep.name}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
                       Created: {new Date(ep.created_at).toLocaleString()} · Last used:{" "}
                       {ep.last_used_at ? new Date(ep.last_used_at).toLocaleString() : "never"}
                       {revoked ? " · Revoked" : ""}
@@ -156,7 +156,7 @@ export default function IngestEndpointsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
+                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
                       disabled={revoked || !canCreate}
                       onClick={async () => {
                         if (!confirm("Revoke this ingest endpoint?")) return;

@@ -1,22 +1,56 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --border: #e4e4e7;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  color-scheme: light;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #18181b;
+    --border: #27272a;
+    --muted: #0f0f12;
+    --muted-foreground: #a1a1aa;
+    --primary: #fafafa;
+    --primary-foreground: #09090b;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --border: #27272a;
+  --muted: #0f0f12;
+  --muted-foreground: #a1a1aa;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  color-scheme: dark;
 }
 
 body {

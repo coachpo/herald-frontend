@@ -33,29 +33,29 @@ export default function AccountPage() {
     <div className="space-y-6">
       <div>
         <div className="text-lg font-semibold tracking-tight">Account</div>
-        <div className="mt-1 text-sm text-zinc-600">Profile and security settings.</div>
+        <div className="mt-1 text-sm text-muted-foreground">Profile and security settings.</div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
           {error}
         </div>
       )}
       {message && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
           {message}
         </div>
       )}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-sm font-semibold">Profile</div>
-        <div className="mt-2 text-sm text-zinc-700">Email: {user?.email}</div>
-        <div className="mt-1 text-sm text-zinc-700">
+        <div className="mt-2 text-sm text-muted-foreground">Email: {user?.email}</div>
+        <div className="mt-1 text-sm text-muted-foreground">
           Status: {verified ? "verified" : "unverified"}
         </div>
         {!verified && (
           <button
-            className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50"
+            className="mt-3 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted"
             onClick={async () => {
               const ok = await callNoBody("/api/auth/resend-verification");
               if (ok) setMessage("Verification email sent (if allowed). Check your inbox.");
@@ -66,18 +66,18 @@ export default function AccountPage() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-sm font-semibold">Change email</div>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
-            className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             type="email"
             placeholder="new email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
           />
           <button
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!newEmail.trim()}
             onClick={async () => {
               setError(null);
@@ -103,18 +103,18 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-sm font-semibold">Change password</div>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           <input
-            className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+            className="rounded-xl border border-border bg-card px-3 py-2 text-sm"
             type="password"
             placeholder="old password"
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
           />
           <input
-            className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+            className="rounded-xl border border-border bg-card px-3 py-2 text-sm"
             type="password"
             placeholder="new password (min 8)"
             value={newPassword}
@@ -123,7 +123,7 @@ export default function AccountPage() {
           />
         </div>
         <button
-          className="mt-3 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+          className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           disabled={!oldPassword || newPassword.length < 8}
           onClick={async () => {
             setError(null);
