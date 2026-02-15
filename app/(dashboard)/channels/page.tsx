@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { authedFetch } from "@/lib/authed";
 import type {
   BarkChannelConfig,
   Channel,
@@ -73,10 +74,7 @@ export default function ChannelsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await apiFetch("/api/channels", {
-      method: "GET",
-      accessToken: auth.accessToken,
-    });
+    const res = await authedFetch(auth, "/api/channels", { method: "GET" });
     if (!res.ok) {
       setError((await readApiError(res)).message);
       setLoading(false);
@@ -85,7 +83,7 @@ export default function ChannelsPage() {
     const data = await readJson<{ channels: Channel[] }>(res);
     setItems(data.channels);
     setLoading(false);
-  }, [auth.accessToken]);
+  }, [auth]);
 
   useEffect(() => {
     void load();
@@ -134,10 +132,7 @@ export default function ChannelsPage() {
       setError(null);
       setSubmitting(true);
       try {
-        const res = await apiFetch(`/api/channels/${id}`, {
-          method: "GET",
-          accessToken: auth.accessToken,
-        });
+        const res = await authedFetch(auth, `/api/channels/${id}`, { method: "GET" });
         if (!res.ok) {
           setError((await readApiError(res)).message);
           return;
@@ -188,7 +183,7 @@ export default function ChannelsPage() {
         setSubmitting(false);
       }
     },
-    [auth.accessToken],
+    [auth],
   );
 
   const submit = useCallback(async () => {
@@ -298,9 +293,8 @@ export default function ChannelsPage() {
 
       const path = editingId ? `/api/channels/${editingId}` : "/api/channels";
       const method = editingId ? "PATCH" : "POST";
-      const res = await apiFetch(path, {
+      const res = await authedFetch(auth, path, {
         method,
-        accessToken: auth.accessToken,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: channelType, name, config: cfg }),
       });
@@ -314,7 +308,7 @@ export default function ChannelsPage() {
       setSubmitting(false);
     }
   }, [
-    auth.accessToken,
+    auth,
     barkDefaultPayloadJson,
     barkDeviceKey,
     barkServerBaseUrl,
@@ -685,9 +679,8 @@ export default function ChannelsPage() {
                     disabled={!canCreate || submitting}
                     onClick={async () => {
                       if (!confirm("Delete this channel?")) return;
-                      const res = await apiFetch(`/api/channels/${c.id}`, {
+                      const res = await authedFetch(auth, `/api/channels/${c.id}`, {
                         method: "DELETE",
-                        accessToken: auth.accessToken,
                       });
                       if (!res.ok) {
                         setError((await readApiError(res)).message);

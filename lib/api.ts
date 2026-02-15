@@ -30,6 +30,6 @@ export async function apiFetch(
   return fetch(path, {
     ...rest,
     headers: h,
-    credentials: "include",
+    credentials: "omit",
   });
 }

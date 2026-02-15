@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { authedFetch } from "@/lib/authed";
 import type { IngestEndpoint, MessageSummary } from "@/lib/types";
 
 export default function MessagesPage() {
@@ -31,14 +32,8 @@ export default function MessagesPage() {
     if (filterEndpointId) params.set("ingest_endpoint_id", filterEndpointId);
 
     const [mRes, eRes] = await Promise.all([
-      apiFetch(`/api/messages?${params.toString()}`, {
-        method: "GET",
-        accessToken: auth.accessToken,
-      }),
-      apiFetch("/api/ingest-endpoints", {
-        method: "GET",
-        accessToken: auth.accessToken,
-      }),
+      authedFetch(auth, `/api/messages?${params.toString()}`, { method: "GET" }),
+      authedFetch(auth, "/api/ingest-endpoints", { method: "GET" }),
     ]);
 
     if (!mRes.ok) {
@@ -57,7 +52,7 @@ export default function MessagesPage() {
     setItems(mData.messages);
     setEndpoints(eData.endpoints);
     setLoading(false);
-  }, [auth.accessToken, q, filterEndpointId]);
+  }, [auth, q, filterEndpointId]);
 
   useEffect(() => {
     void load();
@@ -162,9 +157,8 @@ export default function MessagesPage() {
               older_than_days: olderThanDays,
             };
             if (batchEndpointId) body.ingest_endpoint_id = batchEndpointId;
-            const res = await apiFetch("/api/messages/batch-delete", {
+            const res = await authedFetch(auth, "/api/messages/batch-delete", {
               method: "POST",
-              accessToken: auth.accessToken,
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(body),
             });

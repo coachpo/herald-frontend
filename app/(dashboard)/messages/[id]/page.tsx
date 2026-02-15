@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { authedFetch } from "@/lib/authed";
 import type { Delivery, MessageDetail } from "@/lib/types";
 
 export default function MessageDetailPage() {
@@ -34,11 +35,8 @@ export default function MessageDetailPage() {
       setLoading(true);
       setError(null);
       const [mRes, dRes] = await Promise.all([
-        apiFetch(`/api/messages/${id}`, { method: "GET", accessToken: auth.accessToken }),
-        apiFetch(`/api/messages/${id}/deliveries`, {
-          method: "GET",
-          accessToken: auth.accessToken,
-        }),
+        authedFetch(auth, `/api/messages/${id}`, { method: "GET" }),
+        authedFetch(auth, `/api/messages/${id}/deliveries`, { method: "GET" }),
       ]);
       if (!mRes.ok) {
         setError((await readApiError(mRes)).message);
@@ -56,7 +54,7 @@ export default function MessageDetailPage() {
       setDeliveries(dData.deliveries);
       setLoading(false);
     })();
-  }, [auth.accessToken, id]);
+  }, [auth, id]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading...</div>;
   if (error) {
@@ -79,9 +77,8 @@ export default function MessageDetailPage() {
             disabled={!canDelete}
             onClick={async () => {
               if (!confirm("Delete this message?")) return;
-              const res = await apiFetch(`/api/messages/${id}`, {
+              const res = await authedFetch(auth, `/api/messages/${id}`, {
                 method: "DELETE",
-                accessToken: auth.accessToken,
               });
               if (!res.ok) {
                 setError((await readApiError(res)).message);

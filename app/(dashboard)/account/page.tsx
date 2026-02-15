@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { authedFetch } from "@/lib/authed";
 
 export default function AccountPage() {
   const auth = useAuth();
@@ -24,7 +25,7 @@ export default function AccountPage() {
   async function callNoBody(path: string) {
     setError(null);
     setMessage(null);
-    const res = await apiFetch(path, { method: "POST", accessToken: auth.accessToken });
+    const res = await authedFetch(auth, path, { method: "POST" });
     if (!res.ok) {
       const err = await readApiError(res);
       setError(err.message);
@@ -86,9 +87,8 @@ export default function AccountPage() {
             onClick={async () => {
               setError(null);
               setMessage(null);
-              const res = await apiFetch("/api/auth/change-email", {
+              const res = await authedFetch(auth, "/api/auth/change-email", {
                 method: "POST",
-                accessToken: auth.accessToken,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ new_email: newEmail }),
               });
@@ -132,9 +132,8 @@ export default function AccountPage() {
           onClick={async () => {
             setError(null);
             setMessage(null);
-            const res = await apiFetch("/api/auth/change-password", {
+            const res = await authedFetch(auth, "/api/auth/change-password", {
               method: "POST",
-              accessToken: auth.accessToken,
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
             });
@@ -184,9 +183,8 @@ export default function AccountPage() {
             setMessage(null);
             setDeleteBusy(true);
             try {
-              const res = await apiFetch("/api/auth/delete-account", {
+              const res = await authedFetch(auth, "/api/auth/delete-account", {
                 method: "POST",
-                accessToken: auth.accessToken,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ password: deletePassword, confirm: deleteConfirm }),
               });

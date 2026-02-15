@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { authedFetch } from "@/lib/authed";
 import type { Channel, IngestEndpoint, Rule } from "@/lib/types";
 
 export default function RulesPage() {
@@ -40,9 +41,9 @@ export default function RulesPage() {
     setLoading(true);
     setError(null);
     const [rRes, cRes, eRes] = await Promise.all([
-      apiFetch("/api/rules", { method: "GET", accessToken: auth.accessToken }),
-      apiFetch("/api/channels", { method: "GET", accessToken: auth.accessToken }),
-      apiFetch("/api/ingest-endpoints", { method: "GET", accessToken: auth.accessToken }),
+      authedFetch(auth, "/api/rules", { method: "GET" }),
+      authedFetch(auth, "/api/channels", { method: "GET" }),
+      authedFetch(auth, "/api/ingest-endpoints", { method: "GET" }),
     ]);
     if (!rRes.ok) {
       setError((await readApiError(rRes)).message);
@@ -66,7 +67,7 @@ export default function RulesPage() {
     setChannels(cData.channels);
     setEndpoints(eData.endpoints);
     setLoading(false);
-  }, [auth.accessToken]);
+  }, [auth]);
 
   useEffect(() => {
     void load();
@@ -246,9 +247,8 @@ export default function RulesPage() {
                 };
               }
 
-              const res = await apiFetch("/api/rules", {
+              const res = await authedFetch(auth, "/api/rules", {
                 method: "POST",
-                accessToken: auth.accessToken,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   name,
@@ -314,9 +314,8 @@ export default function RulesPage() {
                       disabled={!canCreate}
                       onClick={async () => {
                         if (!confirm("Delete this rule?")) return;
-                        const res = await apiFetch(`/api/rules/${r.id}`, {
+                        const res = await authedFetch(auth, `/api/rules/${r.id}`, {
                           method: "DELETE",
-                          accessToken: auth.accessToken,
                         });
                         if (!res.ok) {
                           setError((await readApiError(res)).message);
@@ -383,9 +382,8 @@ export default function RulesPage() {
                           setTestResult(null);
                           setTestLoading(true);
                           try {
-                            const res = await apiFetch(`/api/rules/${r.id}/test`, {
+                            const res = await authedFetch(auth, `/api/rules/${r.id}/test`, {
                               method: "POST",
-                              accessToken: auth.accessToken,
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 ingest_endpoint_id: testEndpointId,

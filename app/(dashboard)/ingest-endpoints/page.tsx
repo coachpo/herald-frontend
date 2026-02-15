@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { authedFetch } from "@/lib/authed";
 import type { IngestEndpoint } from "@/lib/types";
 
 type CreateResp = {
@@ -19,6 +20,7 @@ export default function IngestEndpointsPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreateResp | null>(null);
+  const [copiedEndpointId, setCopiedEndpointId] = useState<string | null>(null);
 
   const canCreate = Boolean(auth.user?.email_verified_at);
 
@@ -30,9 +32,8 @@ export default function IngestEndpointsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await apiFetch("/api/ingest-endpoints", {
+    const res = await authedFetch(auth, "/api/ingest-endpoints", {
       method: "GET",
-      accessToken: auth.accessToken,
     });
     if (!res.ok) {
       const err = await readApiError(res);
@@ -43,11 +44,42 @@ export default function IngestEndpointsPage() {
     const data = await readJson<{ endpoints: IngestEndpoint[] }>(res);
     setItems(data.endpoints);
     setLoading(false);
-  }, [auth.accessToken]);
+  }, [auth]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const buildIngestUrl = (endpointId: string) => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/api/ingest/${endpointId}`;
+    }
+    return `/api/ingest/${endpointId}`;
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+    }
+
+    try {
+      const el = document.createElement("textarea");
+      el.value = text;
+      el.style.position = "fixed";
+      el.style.left = "-9999px";
+      el.style.top = "0";
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(el);
+      return ok;
+    } catch {
+      return false;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -113,9 +145,8 @@ export default function IngestEndpointsPage() {
             disabled={!canCreate || !name.trim()}
             onClick={async () => {
               setError(null);
-              const res = await apiFetch("/api/ingest-endpoints", {
+              const res = await authedFetch(auth, "/api/ingest-endpoints", {
                 method: "POST",
-                accessToken: auth.accessToken,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name }),
               });
@@ -150,6 +181,7 @@ export default function IngestEndpointsPage() {
           <div className="divide-y divide-border">
             {sorted.map((ep) => {
               const revoked = Boolean(ep.revoked_at);
+              const ingestUrl = buildIngestUrl(ep.id);
               return (
                 <div key={ep.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -159,6 +191,29 @@ export default function IngestEndpointsPage() {
                       {ep.last_used_at ? new Date(ep.last_used_at).toLocaleString() : "never"}
                       {revoked ? " · Revoked" : ""}
                     </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">URL:</span>
+                      <span className="break-all rounded-lg border border-border bg-muted px-2 py-1 font-mono text-[11px] text-foreground">
+                        {ingestUrl}
+                      </span>
+                      <button
+                        type="button"
+                        className="rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-medium hover:bg-muted"
+                        onClick={async () => {
+                          const ok = await copyToClipboard(ingestUrl);
+                          if (!ok) {
+                            setError("Copy failed.");
+                            return;
+                          }
+                          setCopiedEndpointId(ep.id);
+                          window.setTimeout(() => {
+                            setCopiedEndpointId((prev) => (prev === ep.id ? null : prev));
+                          }, 1200);
+                        }}
+                      >
+                        {copiedEndpointId === ep.id ? "Copied" : "Copy"}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -167,9 +222,8 @@ export default function IngestEndpointsPage() {
                       onClick={async () => {
                         if (!confirm("Revoke this ingest endpoint?")) return;
                         setError(null);
-                        const res = await apiFetch(`/api/ingest-endpoints/${ep.id}/revoke`, {
+                        const res = await authedFetch(auth, `/api/ingest-endpoints/${ep.id}/revoke`, {
                           method: "POST",
-                          accessToken: auth.accessToken,
                         });
                         if (!res.ok) {
                           const err = await readApiError(res);
