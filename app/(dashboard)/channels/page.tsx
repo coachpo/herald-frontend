@@ -6,6 +6,11 @@ import { apiFetch, readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { BarkChannelConfig, Channel } from "@/lib/types";
 
+type ChannelDetailResp = {
+  channel: Channel;
+  config: BarkChannelConfig;
+};
+
 export default function ChannelsPage() {
   const auth = useAuth();
   const [items, setItems] = useState<Channel[]>([]);
@@ -16,6 +21,9 @@ export default function ChannelsPage() {
   const [serverBaseUrl, setServerBaseUrl] = useState("");
   const [deviceKey, setDeviceKey] = useState("");
   const [defaultJson, setDefaultJson] = useState("{}");
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const canCreate = Boolean(auth.user?.email_verified_at);
 
@@ -36,6 +44,41 @@ export default function ChannelsPage() {
     setItems(data.channels);
     setLoading(false);
   }, [auth.accessToken]);
+
+  const resetForm = useCallback(() => {
+    setEditingId(null);
+    setName("");
+    setServerBaseUrl("");
+    setDeviceKey("");
+    setDefaultJson("{}");
+  }, []);
+
+  const beginEdit = useCallback(
+    async (id: string) => {
+      setError(null);
+      setSubmitting(true);
+      try {
+        const res = await apiFetch(`/api/channels/${id}`, {
+          method: "GET",
+          accessToken: auth.accessToken,
+        });
+        if (!res.ok) {
+          const err = await readApiError(res);
+          setError(err.message);
+          return;
+        }
+        const data = await readJson<ChannelDetailResp>(res);
+        setEditingId(id);
+        setName(data.channel.name ?? "");
+        setServerBaseUrl(data.config.server_base_url ?? "");
+        setDeviceKey((data.config.device_key ?? "") || "");
+        setDefaultJson(JSON.stringify(data.config.default_payload_json ?? {}, null, 2));
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [auth.accessToken],
+  );
 
   useEffect(() => {
     void load();
@@ -60,7 +103,9 @@ export default function ChannelsPage() {
       )}
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-        <div className="text-sm font-semibold">Create Bark channel</div>
+        <div className="text-sm font-semibold">
+          {editingId ? "Edit Bark channel" : "Create Bark channel"}
+        </div>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           <label className="block">
             <div className="text-xs font-medium text-zinc-700">Name</div>
@@ -68,7 +113,7 @@ export default function ChannelsPage() {
               className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={!canCreate}
+              disabled={!canCreate || submitting}
             />
           </label>
           <label className="block">
@@ -78,7 +123,7 @@ export default function ChannelsPage() {
               placeholder="https://your-bark.example.com"
               value={serverBaseUrl}
               onChange={(e) => setServerBaseUrl(e.target.value)}
-              disabled={!canCreate}
+              disabled={!canCreate || submitting}
             />
           </label>
           <label className="block">
@@ -87,7 +132,7 @@ export default function ChannelsPage() {
               className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm font-mono"
               value={deviceKey}
               onChange={(e) => setDeviceKey(e.target.value)}
-              disabled={!canCreate}
+              disabled={!canCreate || submitting}
             />
           </label>
           <label className="block">
@@ -96,49 +141,71 @@ export default function ChannelsPage() {
               className="mt-1 h-24 w-full resize-y rounded-xl border border-zinc-200 px-3 py-2 font-mono text-xs"
               value={defaultJson}
               onChange={(e) => setDefaultJson(e.target.value)}
-              disabled={!canCreate}
+              disabled={!canCreate || submitting}
             />
           </label>
         </div>
 
         <div className="mt-3">
-          <button
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
-            disabled={!canCreate || !name.trim() || !serverBaseUrl.trim()}
-            onClick={async () => {
-              setError(null);
-              let parsed: Record<string, unknown> = {};
-              try {
-                parsed = defaultJson.trim() ? (JSON.parse(defaultJson) as Record<string, unknown>) : {};
-              } catch {
-                setError("Default payload JSON is not valid JSON.");
-                return;
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+              disabled={
+                !canCreate || submitting || !name.trim() || !serverBaseUrl.trim()
               }
-              const cfg: BarkChannelConfig = {
-                server_base_url: serverBaseUrl.trim(),
-                device_key: deviceKey.trim() || undefined,
-                default_payload_json: parsed,
-              };
-              const res = await apiFetch("/api/channels", {
-                method: "POST",
-                accessToken: auth.accessToken,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ type: "bark", name, config: cfg }),
-              });
-              if (!res.ok) {
-                const err = await readApiError(res);
-                setError(err.message);
-                return;
-              }
-              setName("");
-              setServerBaseUrl("");
-              setDeviceKey("");
-              setDefaultJson("{}");
-              void load();
-            }}
-          >
-            Create
-          </button>
+              onClick={async () => {
+                setError(null);
+                setSubmitting(true);
+                try {
+                  let parsed: Record<string, unknown> = {};
+                  try {
+                    parsed = defaultJson.trim()
+                      ? (JSON.parse(defaultJson) as Record<string, unknown>)
+                      : {};
+                  } catch {
+                    setError("Default payload JSON is not valid JSON.");
+                    return;
+                  }
+                  const cfg: BarkChannelConfig = {
+                    server_base_url: serverBaseUrl.trim(),
+                    device_key: deviceKey.trim() || undefined,
+                    default_payload_json: parsed,
+                  };
+
+                  const path = editingId ? `/api/channels/${editingId}` : "/api/channels";
+                  const method = editingId ? "PATCH" : "POST";
+                  const res = await apiFetch(path, {
+                    method,
+                    accessToken: auth.accessToken,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: "bark", name, config: cfg }),
+                  });
+                  if (!res.ok) {
+                    const err = await readApiError(res);
+                    setError(err.message);
+                    return;
+                  }
+
+                  resetForm();
+                  void load();
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {editingId ? "Save" : "Create"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50"
+                disabled={submitting}
+                onClick={() => resetForm()}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
           {!canCreate && (
             <div className="mt-2 text-xs text-amber-700">
               Verify your email to create channels.
@@ -163,24 +230,40 @@ export default function ChannelsPage() {
                     {c.type} · Created: {new Date(c.created_at).toLocaleString()}
                   </div>
                 </div>
-                <button
-                  className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
-                  disabled={!canCreate}
-                  onClick={async () => {
-                    if (!confirm("Delete this channel?")) return;
-                    const res = await apiFetch(`/api/channels/${c.id}`, {
-                      method: "DELETE",
-                      accessToken: auth.accessToken,
-                    });
-                    if (!res.ok) {
-                      setError((await readApiError(res)).message);
-                      return;
-                    }
-                    void load();
-                  }}
-                >
-                  Delete
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
+                    disabled={!canCreate || submitting}
+                    onClick={() => {
+                      void beginEdit(c.id);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
+                    disabled={!canCreate || submitting}
+                    onClick={async () => {
+                      if (!confirm("Delete this channel?")) return;
+                      const res = await apiFetch(`/api/channels/${c.id}`, {
+                        method: "DELETE",
+                        accessToken: auth.accessToken,
+                      });
+                      if (!res.ok) {
+                        setError((await readApiError(res)).message);
+                        return;
+                      }
+                      if (editingId === c.id) {
+                        resetForm();
+                      }
+                      void load();
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
