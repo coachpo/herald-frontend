@@ -4,6 +4,18 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { apiFetch, readApiError } from "@/lib/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -14,23 +26,25 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-md px-6 py-16">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="text-lg font-semibold tracking-tight">Forgot password</div>
-          <div className="mt-1 text-sm text-muted-foreground">We will email you a reset link.</div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Forgot password</CardTitle>
+            <CardDescription>We will email you a reset link.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {message && (
+              <Alert className="mb-4">
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {message && (
-            <div className="mt-4 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
-              {message}
-            </div>
-          )}
-          {error && (
-            <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
-              {error}
-            </div>
-          )}
-
-          <form
-            className="mt-5 space-y-3"
+            <form
+              className="space-y-3"
             onSubmit={async (e) => {
               e.preventDefault();
               setBusy(true);
@@ -50,30 +64,28 @@ export default function ForgotPasswordPage() {
               setMessage("If that email exists, you'll receive a reset link.");
             }}
           >
-            <label className="block">
-              <div className="text-xs font-medium text-muted-foreground">Email</div>
-              <input
-                className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-            </label>
-            <button
-              disabled={busy}
-              className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              type="submit"
-            >
-              {busy ? "Sending..." : "Send reset link"}
-            </button>
-            <div className="text-sm">
-              <Link className="text-muted-foreground underline" href="/login">
-                Back to login
-              </Link>
             </div>
+
+            <Button disabled={busy} className="w-full" type="submit">
+              {busy ? "Sending..." : "Send reset link"}
+            </Button>
           </form>
-        </div>
+          </CardContent>
+          <CardFooter>
+            <Button variant="link" asChild className="px-0">
+              <Link href="/login">Back to login</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

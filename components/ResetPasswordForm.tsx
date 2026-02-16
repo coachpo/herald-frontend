@@ -5,6 +5,18 @@ import { useState } from "react";
 import { useEffect } from "react";
 
 import { apiFetch, readApiError } from "@/lib/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function ResetPasswordForm({ token }: { token: string | null }) {
   const [resolvedToken, setResolvedToken] = useState<string | null>(token);
@@ -22,22 +34,26 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-md px-6 py-16">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="text-lg font-semibold tracking-tight">Reset password</div>
-          {!resolvedToken && (
-            <div className="mt-4 text-sm text-muted-foreground">Missing token.</div>
-          )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Reset password</CardTitle>
+            <CardDescription>Set a new password for your account.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!resolvedToken && (
+              <div className="text-sm text-muted-foreground">Missing token.</div>
+            )}
 
-          {message && (
-            <div className="mt-4 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
-              {message}
-            </div>
-          )}
-          {error && (
-            <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
-              {error}
-            </div>
-          )}
+            {message && (
+              <Alert className="mt-4">
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
+            {error && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
           {resolvedToken && (
             <form
@@ -61,33 +77,32 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
                 setMessage("Password updated. You can log in now.");
               }}
             >
-              <label className="block">
-                <div className="text-xs font-medium text-muted-foreground">New password</div>
-                <input
-                  className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              <div className="space-y-2">
+                <Label htmlFor="reset-password">New password</Label>
+                <Input
+                  id="reset-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   minLength={8}
                   required
                 />
-              </label>
-              <button
-                disabled={busy}
-                className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                type="submit"
-              >
+              </div>
+
+              <Button disabled={busy} className="w-full" type="submit">
                 {busy ? "Saving..." : "Set new password"}
-              </button>
+              </Button>
             </form>
           )}
 
-          <div className="mt-5 text-sm">
-            <Link className="text-muted-foreground underline" href="/login">
-              Back to login
-            </Link>
-          </div>
-        </div>
+            <div className="mt-5">
+              <Button variant="link" asChild className="px-0">
+                <Link href="/login">Back to login</Link>
+              </Button>
+            </div>
+          </CardContent>
+          <CardFooter />
+        </Card>
       </div>
     </div>
   );

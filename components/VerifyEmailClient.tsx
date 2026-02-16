@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { apiFetch, readApiError } from "@/lib/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export function VerifyEmailClient({ token }: { token: string | null }) {
   const [resolvedToken, setResolvedToken] = useState<string | null>(token);
@@ -37,30 +47,35 @@ export function VerifyEmailClient({ token }: { token: string | null }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-md px-6 py-16">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="text-lg font-semibold tracking-tight">Verify email</div>
-          {!resolvedToken && (
-            <div className="mt-4 text-sm text-muted-foreground">Missing token.</div>
-          )}
-          {resolvedToken && status === "idle" && (
-            <div className="mt-4 text-sm text-muted-foreground">Verifying...</div>
-          )}
-          {status === "ok" && (
-            <div className="mt-4 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
-              Email verified.
-            </div>
-          )}
-          {status === "err" && (
-            <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
-              {error ?? "Verification failed."}
-            </div>
-          )}
-          <div className="mt-5 text-sm">
-            <Link className="text-muted-foreground underline" href="/login">
-              Go to login
-            </Link>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Verify email</CardTitle>
+            <CardDescription>Confirm your email address to unlock all features.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!resolvedToken && (
+              <div className="text-sm text-muted-foreground">Missing token.</div>
+            )}
+            {resolvedToken && status === "idle" && (
+              <div className="text-sm text-muted-foreground">Verifying...</div>
+            )}
+            {status === "ok" && (
+              <Alert className="mt-4">
+                <AlertDescription>Email verified.</AlertDescription>
+              </Alert>
+            )}
+            {status === "err" && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>{error ?? "Verification failed."}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button variant="link" asChild className="px-0">
+              <Link href="/login">Go to login</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );
