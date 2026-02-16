@@ -828,17 +828,17 @@ export default function ChannelsPage() {
           <div className="divide-y divide-border">
             {sorted.map((c) => (
               <div key={c.id} className="px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <div className="text-sm font-medium text-foreground">{c.name}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       {c.type} · Created: {new Date(c.created_at).toLocaleString()}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <button
                       type="button"
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      className="whitespace-nowrap rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
                       disabled={!canCreate || submitting}
                       data-testid={`channel-send-test-toggle-${c.id}`}
                       onClick={() => {
@@ -851,7 +851,7 @@ export default function ChannelsPage() {
                     </button>
                     <button
                       type="button"
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      className="whitespace-nowrap rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
                       disabled={!canCreate || submitting}
                       onClick={() => {
                         void beginEdit(c.id);
@@ -861,7 +861,7 @@ export default function ChannelsPage() {
                     </button>
                     <button
                       type="button"
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      className="whitespace-nowrap rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
                       disabled={!canCreate || submitting}
                       onClick={async () => {
                         if (!confirm("Delete this channel?")) return;
@@ -923,7 +923,7 @@ export default function ChannelsPage() {
                             {testResult.ok ? "sent" : "failed"}
                           </span>
                         </div>
-                        <pre className="mt-2 overflow-auto rounded-lg bg-muted px-3 py-2 text-xs text-foreground">
+                        <pre className="mt-2 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted px-3 py-2 text-xs text-foreground">
                           {JSON.stringify(testResult.provider_response, null, 2)}
                         </pre>
                       </div>

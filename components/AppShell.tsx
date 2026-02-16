@@ -27,9 +27,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="text-sm font-semibold tracking-tight">Beacon Spear</div>
             <div className="text-xs text-muted-foreground">Ingest, store, forward.</div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
             <ThemeToggle />
-            <div className="text-xs text-muted-foreground">{user?.email}</div>
+            <div className="min-w-0 max-w-[12rem] truncate text-xs text-muted-foreground sm:max-w-[20rem]">
+              {user?.email}
+            </div>
             <button
               className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium hover:bg-muted"
               onClick={() => void logout()}
@@ -40,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
-          <nav className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+          <nav className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
             <ul className="flex flex-col gap-1">
               {NAV.map((item) => {
                 const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
@@ -63,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </ul>
           </nav>
 
-          <main className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <main className="min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm">
             {children}
           </main>
         </div>
