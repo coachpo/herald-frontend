@@ -7,6 +7,10 @@ import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 import type { IngestEndpoint, MessageSummary } from "@/lib/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function MessagesPage() {
   const auth = useAuth();
@@ -72,26 +76,27 @@ export default function MessagesPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Search</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+          <div className="space-y-2">
+            <Label htmlFor="messages-search">Search</Label>
+            <Input
+              id="messages-search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="substring"
             />
-          </label>
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Endpoint</div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="messages-endpoint">Endpoint</Label>
             <select
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              id="messages-endpoint"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               value={filterEndpointId}
               onChange={(e) => setFilterEndpointId(e.target.value)}
             >
@@ -102,7 +107,7 @@ export default function MessagesPage() {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
       </div>
 
@@ -111,16 +116,16 @@ export default function MessagesPage() {
         <div className="mt-1 text-sm text-muted-foreground">Soft-delete messages older than N days.</div>
 
         {batchMessage && (
-          <div className="mt-3 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
-            {batchMessage}
-          </div>
+          <Alert className="mt-3 border-success/20 bg-success/10 text-success dark:border-success/30 dark:bg-success/10">
+            <AlertDescription className="text-success">{batchMessage}</AlertDescription>
+          </Alert>
         )}
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Older than (days)</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+          <div className="space-y-2">
+            <Label htmlFor="batch-older">Older than (days)</Label>
+            <Input
+              id="batch-older"
               type="number"
               min={1}
               max={36500}
@@ -128,11 +133,12 @@ export default function MessagesPage() {
               onChange={(e) => setOlderThanDays(parseInt(e.target.value || "0", 10))}
               disabled={!canMutate}
             />
-          </label>
-          <label className="block md:col-span-2">
-            <div className="text-xs font-medium text-muted-foreground">Scope endpoint (optional)</div>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="batch-endpoint">Scope endpoint (optional)</Label>
             <select
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              id="batch-endpoint"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               value={batchEndpointId}
               onChange={(e) => setBatchEndpointId(e.target.value)}
               disabled={!canMutate}
@@ -144,11 +150,11 @@ export default function MessagesPage() {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
 
-        <button
-          className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        <Button
+          className="mt-3"
           disabled={!canMutate || !olderThanDays || olderThanDays < 1}
           onClick={async () => {
             setError(null);
@@ -172,7 +178,7 @@ export default function MessagesPage() {
           }}
         >
           Delete
-        </button>
+        </Button>
         {!canMutate && (
           <div className="mt-2 text-xs text-warning">Verify your email to delete messages.</div>
         )}

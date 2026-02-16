@@ -7,6 +7,10 @@ import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 import { buildIngestUrl } from "@/lib/public-api";
 import type { IngestEndpoint } from "@/lib/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type CreateResp = {
   endpoint: IngestEndpoint;
@@ -88,9 +92,9 @@ export default function IngestEndpointsPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {created && (
@@ -100,13 +104,14 @@ export default function IngestEndpointsPage() {
             <div>
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs font-medium text-success">Ingest key (copy now)</div>
-                <button
+                <Button
                   type="button"
+                  size="xs"
+                  variant="outline"
                   className={
-                    "rounded-lg border px-2.5 py-1 text-[11px] font-semibold " +
-                    (createdCopiedField === "key"
+                    createdCopiedField === "key"
                       ? "border-success/30 bg-success/20 text-success"
-                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                   }
                   onClick={async () => {
                     const ok = await copyToClipboard(created.ingest_key);
@@ -121,7 +126,7 @@ export default function IngestEndpointsPage() {
                   }}
                 >
                   {createdCopiedField === "key" ? "Copied" : "Copy key"}
-                </button>
+                </Button>
               </div>
               <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_key}
@@ -130,13 +135,14 @@ export default function IngestEndpointsPage() {
             <div>
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs font-medium text-success">Ingest URL</div>
-                <button
+                <Button
                   type="button"
+                  size="xs"
+                  variant="outline"
                   className={
-                    "rounded-lg border px-2.5 py-1 text-[11px] font-semibold " +
-                    (createdCopiedField === "url"
+                    createdCopiedField === "url"
                       ? "border-success/30 bg-success/20 text-success"
-                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                   }
                   onClick={async () => {
                     const ok = await copyToClipboard(created.ingest_url);
@@ -151,7 +157,7 @@ export default function IngestEndpointsPage() {
                   }}
                 >
                   {createdCopiedField === "url" ? "Copied" : "Copy URL"}
-                </button>
+                </Button>
               </div>
               <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_url}
@@ -160,13 +166,14 @@ export default function IngestEndpointsPage() {
             <div>
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs font-medium text-success">curl</div>
-                <button
+                <Button
                   type="button"
+                  size="xs"
+                  variant="outline"
                   className={
-                    "rounded-lg border px-2.5 py-1 text-[11px] font-semibold " +
-                    (createdCopiedField === "curl"
+                    createdCopiedField === "curl"
                       ? "border-success/30 bg-success/20 text-success"
-                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                   }
                   onClick={async () => {
                     const curl = `curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`;
@@ -182,42 +189,42 @@ export default function IngestEndpointsPage() {
                   }}
                 >
                   {createdCopiedField === "curl" ? "Copied" : "Copy curl"}
-                </button>
+                </Button>
               </div>
               <pre className="mt-1 overflow-auto rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`}
               </pre>
             </div>
           </div>
-          <button
-            className="mt-3 rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted"
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
             onClick={() => {
               setCreated(null);
               setCreatedCopiedField(null);
             }}
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="text-sm font-semibold">Create endpoint</div>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input
-            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={!canCreate}
-          />
-          <button
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || !name.trim()}
-            onClick={async () => {
-              setError(null);
-              const res = await authedFetch(auth, "/api/ingest-endpoints", {
-                method: "POST",
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="text-sm font-semibold">Create endpoint</div>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <Input
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={!canCreate}
+            />
+            <Button
+              disabled={!canCreate || !name.trim()}
+              onClick={async () => {
+                setError(null);
+                const res = await authedFetch(auth, "/api/ingest-endpoints", {
+                  method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name }),
               });
@@ -232,17 +239,17 @@ export default function IngestEndpointsPage() {
                 ...data,
                 ingest_url: buildIngestUrl(data.endpoint.id),
               });
-              setName("");
-              void load();
-            }}
-          >
-            Create
-          </button>
+                setName("");
+                void load();
+              }}
+            >
+              Create
+            </Button>
+          </div>
+          {!canCreate && (
+            <div className="mt-2 text-xs text-warning">Verify your email to create endpoints.</div>
+          )}
         </div>
-        {!canCreate && (
-          <div className="mt-2 text-xs text-warning">Verify your email to create endpoints.</div>
-        )}
-      </div>
 
       <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3 text-sm font-semibold">Endpoints</div>
@@ -263,9 +270,9 @@ export default function IngestEndpointsPage() {
                       Created: {new Date(ep.created_at).toLocaleString()} · Last used:{" "}
                       {ep.last_used_at ? new Date(ep.last_used_at).toLocaleString() : "never"}
                       {revoked && (
-                        <span className="ml-2 inline-flex items-center rounded-md border border-destructive/20 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                        <Badge variant="destructive" className="ml-2 uppercase text-[10px] tracking-wide">
                           Revoked
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -273,13 +280,14 @@ export default function IngestEndpointsPage() {
                       <span className="break-all rounded-lg border border-border bg-muted px-2 py-1 font-mono text-[11px] text-foreground">
                         {ingestUrl}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        size="xs"
+                        variant="outline"
                         className={
-                          "rounded-lg border px-2 py-1 text-[11px] font-semibold " +
-                          (copiedEndpointId === ep.id
+                          copiedEndpointId === ep.id
                             ? "border-success/30 bg-success/20 text-success"
-                            : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                            : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                         }
                         onClick={async () => {
                           const ok = await copyToClipboard(ingestUrl);
@@ -294,12 +302,13 @@ export default function IngestEndpointsPage() {
                         }}
                       >
                         {copiedEndpointId === ep.id ? "Copied" : "Copy"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                    <Button
+                      variant="outline"
+                      size="xs"
                       disabled={revoked || !canCreate}
                       onClick={async () => {
                         if (!confirm("Revoke this ingest endpoint?")) return;
@@ -316,9 +325,10 @@ export default function IngestEndpointsPage() {
                       }}
                     >
                       Revoke
-                    </button>
-                    <button
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
                       disabled={!canCreate}
                       onClick={async () => {
                         if (!confirm("Archive this ingest endpoint? It will be hidden and will stop ingest.")) {
@@ -337,7 +347,7 @@ export default function IngestEndpointsPage() {
                       }}
                     >
                       Archive
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
