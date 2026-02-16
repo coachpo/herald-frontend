@@ -371,7 +371,7 @@ export default function RulesPage() {
           />
         </label>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex items-center gap-2">
           <button
             className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!canCreate || !testEndpointId || testLoading}

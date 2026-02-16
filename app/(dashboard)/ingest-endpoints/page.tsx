@@ -100,9 +100,9 @@ export default function IngestEndpointsPage() {
       {created && (
         <div className="rounded-2xl border border-success/20 bg-success/10 p-4 dark:border-success/30 dark:bg-success/10">
           <div className="text-sm font-semibold text-success">Endpoint created</div>
-          <div className="mt-2 grid gap-2 text-sm">
-            <div>
-              <div className="flex items-center justify-between gap-2">
+          <div className="mt-2 grid min-w-0 gap-2 text-sm">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-xs font-medium text-success">Ingest key (copy now)</div>
                 <Button
                   type="button"
@@ -128,12 +128,12 @@ export default function IngestEndpointsPage() {
                   {createdCopiedField === "key" ? "Copied" : "Copy key"}
                 </Button>
               </div>
-              <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
+              <div className="mt-1 max-w-full break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_key}
               </div>
             </div>
-            <div>
-              <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-xs font-medium text-success">Ingest URL</div>
                 <Button
                   type="button"
@@ -159,12 +159,12 @@ export default function IngestEndpointsPage() {
                   {createdCopiedField === "url" ? "Copied" : "Copy URL"}
                 </Button>
               </div>
-              <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
+              <div className="mt-1 max-w-full break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_url}
               </div>
             </div>
-            <div>
-              <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-xs font-medium text-success">curl</div>
                 <Button
                   type="button"
@@ -191,7 +191,7 @@ export default function IngestEndpointsPage() {
                   {createdCopiedField === "curl" ? "Copied" : "Copy curl"}
                 </Button>
               </div>
-              <pre className="mt-1 overflow-auto rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
+              <pre className="mt-1 max-w-full overflow-x-auto whitespace-pre-wrap break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`}
               </pre>
             </div>
@@ -305,7 +305,7 @@ export default function IngestEndpointsPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="xs"
