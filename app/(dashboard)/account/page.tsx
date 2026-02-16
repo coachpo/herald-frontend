@@ -42,12 +42,12 @@ export default function AccountPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
           {error}
         </div>
       )}
       {message && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+        <div className="rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
           {message}
         </div>
       )}
@@ -56,7 +56,12 @@ export default function AccountPage() {
         <div className="text-sm font-semibold">Profile</div>
         <div className="mt-2 text-sm text-muted-foreground">Email: {user?.email}</div>
         <div className="mt-1 text-sm text-muted-foreground">
-          Status: {verified ? "verified" : "unverified"}
+          Status:{" "}
+          {verified ? (
+            <span className="font-semibold text-success">verified</span>
+          ) : (
+            <span className="font-semibold text-warning">unverified</span>
+          )}
         </div>
         {!verified && (
           <button
@@ -150,15 +155,15 @@ export default function AccountPage() {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/60 dark:bg-rose-950/35">
-        <div className="text-sm font-semibold text-rose-900 dark:text-rose-200">Delete account</div>
-        <div className="mt-1 text-sm text-rose-900/80 dark:text-rose-200/80">
+      <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 dark:border-destructive/30 dark:bg-destructive/10">
+        <div className="text-sm font-semibold text-destructive">Delete account</div>
+        <div className="mt-1 text-sm text-destructive/80">
           Irreversible. Deletes your account and all messages, endpoints, channels, rules, and deliveries.
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           <input
-            className="rounded-xl border border-rose-200 bg-card px-3 py-2 text-sm text-foreground placeholder:text-rose-900/50 dark:border-rose-900/60 dark:placeholder:text-rose-200/50"
+            className="rounded-xl border border-destructive/20 bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             type="password"
             placeholder="password"
             value={deletePassword}
@@ -166,7 +171,7 @@ export default function AccountPage() {
             disabled={deleteBusy}
           />
           <input
-            className="rounded-xl border border-rose-200 bg-card px-3 py-2 text-sm text-foreground placeholder:text-rose-900/50 dark:border-rose-900/60 dark:placeholder:text-rose-200/50"
+            className="rounded-xl border border-destructive/20 bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="type DELETE"
             value={deleteConfirm}
             onChange={(e) => setDeleteConfirm(e.target.value)}
@@ -175,7 +180,7 @@ export default function AccountPage() {
         </div>
 
         <button
-          className="mt-3 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+          className="mt-3 rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-white hover:bg-destructive/90 disabled:opacity-50"
           disabled={deleteBusy || !deletePassword || deleteConfirm.trim() !== "DELETE"}
           onClick={async () => {
             if (!confirm("Delete your account? This cannot be undone.")) return;

@@ -19,6 +19,13 @@ type ChannelDetailResp = {
   config: BarkChannelConfig | NtfyChannelConfig | MqttChannelConfig;
 };
 
+type ChannelTestResp = {
+  ok: boolean;
+  channel_id: string;
+  channel_type: ChannelType;
+  provider_response: unknown;
+};
+
 function parseJsonObject(text: string): { ok: true; value: Record<string, unknown> } | { ok: false; error: string } {
   const trimmed = text.trim();
   if (!trimmed) return { ok: true, value: {} };
@@ -31,6 +38,39 @@ function parseJsonObject(text: string): { ok: true; value: Record<string, unknow
   } catch {
     return { ok: false, error: "Invalid JSON." };
   }
+}
+
+function looksLikeBarkDeviceKey(seg: string): boolean {
+  const s = (seg || "").trim();
+  if (s.length < 16) return false;
+  if (!/^[A-Za-z0-9_-]+$/.test(s)) return false;
+  return /\d/.test(s);
+}
+
+function trySplitBarkUrl(input: string): { serverBaseUrl: string; deviceKey: string } | null {
+  const raw = (input || "").trim();
+  if (!raw) return null;
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  const path = u.pathname.replace(/\/+$/, "");
+  if (path === "" || path === "/") {
+    return null;
+  }
+
+  if (path === "/push") {
+    return null;
+  }
+
+  const segs = path.split("/").filter(Boolean);
+  if (segs.length !== 1) return null;
+  const seg = segs[0];
+  if (!looksLikeBarkDeviceKey(seg)) return null;
+  return { serverBaseUrl: u.origin, deviceKey: seg };
 }
 
 export default function ChannelsPage() {
@@ -49,6 +89,8 @@ export default function ChannelsPage() {
 
   const [barkServerBaseUrl, setBarkServerBaseUrl] = useState("");
   const [barkDeviceKey, setBarkDeviceKey] = useState("");
+  const [barkUseDeviceKeys, setBarkUseDeviceKeys] = useState(false);
+  const [barkDeviceKeysText, setBarkDeviceKeysText] = useState("");
   const [barkDefaultPayloadJson, setBarkDefaultPayloadJson] = useState("{}");
 
   const [ntfyServerBaseUrl, setNtfyServerBaseUrl] = useState("");
@@ -70,6 +112,13 @@ export default function ChannelsPage() {
   const [mqttRetain, setMqttRetain] = useState(false);
   const [mqttClientId, setMqttClientId] = useState("");
   const [mqttKeepaliveSeconds, setMqttKeepaliveSeconds] = useState("60");
+
+  const [testChannelId, setTestChannelId] = useState<string | null>(null);
+  const [testTitle, setTestTitle] = useState("Beacon Spear test");
+  const [testBody, setTestBody] = useState("Test notification from Beacon Spear");
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<ChannelTestResp | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -104,6 +153,8 @@ export default function ChannelsPage() {
 
     setBarkServerBaseUrl("");
     setBarkDeviceKey("");
+    setBarkUseDeviceKeys(false);
+    setBarkDeviceKeysText("");
     setBarkDefaultPayloadJson("{}");
 
     setNtfyServerBaseUrl("");
@@ -125,6 +176,13 @@ export default function ChannelsPage() {
     setMqttRetain(false);
     setMqttClientId("");
     setMqttKeepaliveSeconds("60");
+
+    setTestChannelId(null);
+    setTestTitle("Beacon Spear test");
+    setTestBody("Test notification from Beacon Spear");
+    setTestLoading(false);
+    setTestError(null);
+    setTestResult(null);
   }, []);
 
   const beginEdit = useCallback(
@@ -145,7 +203,16 @@ export default function ChannelsPage() {
         if (data.channel.type === "bark") {
           const cfg = data.config as BarkChannelConfig;
           setBarkServerBaseUrl(cfg.server_base_url ?? "");
-          setBarkDeviceKey((cfg.device_key ?? "") || "");
+          const keys = Array.isArray(cfg.device_keys) ? cfg.device_keys.filter(Boolean) : [];
+          if (keys.length > 0) {
+            setBarkUseDeviceKeys(true);
+            setBarkDeviceKeysText(keys.join("\n"));
+            setBarkDeviceKey("");
+          } else {
+            setBarkUseDeviceKeys(false);
+            setBarkDeviceKeysText("");
+            setBarkDeviceKey((cfg.device_key ?? "") || "");
+          }
           setBarkDefaultPayloadJson(JSON.stringify(cfg.default_payload_json ?? {}, null, 2));
         } else if (data.channel.type === "ntfy") {
           const cfg = data.config as NtfyChannelConfig;
@@ -198,18 +265,52 @@ export default function ChannelsPage() {
       let cfg: Record<string, unknown> = {};
 
       if (channelType === "bark") {
-        if (!barkServerBaseUrl.trim()) {
+        let baseUrl = barkServerBaseUrl.trim();
+        let deviceKey = barkDeviceKey.trim();
+        if (!baseUrl) {
           setError("Server base URL is required.");
           return;
         }
+
+        if (baseUrl.endsWith("/push")) {
+          baseUrl = baseUrl.slice(0, -"/push".length);
+        }
+
+        const split = trySplitBarkUrl(baseUrl);
+        if (split) {
+          baseUrl = split.serverBaseUrl;
+          if (!barkUseDeviceKeys && !deviceKey) {
+            deviceKey = split.deviceKey;
+          }
+        }
+
+        let deviceKeys: string[] | null = null;
+        if (barkUseDeviceKeys) {
+          const keys = barkDeviceKeysText
+            .split(/\r?\n/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+          if (keys.length === 0) {
+            setError("At least one device key is required.");
+            return;
+          }
+          deviceKeys = keys;
+        } else {
+          if (!deviceKey) {
+            setError("Device key is required (you can also paste a full Bark key URL). ");
+            return;
+          }
+        }
+
         const parsed = parseJsonObject(barkDefaultPayloadJson);
         if (!parsed.ok) {
           setError(`Default payload JSON: ${parsed.error}`);
           return;
         }
         cfg = {
-          server_base_url: barkServerBaseUrl.trim(),
-          device_key: barkDeviceKey.trim() || undefined,
+          server_base_url: baseUrl,
+          device_key: barkUseDeviceKeys ? undefined : deviceKey,
+          device_keys: barkUseDeviceKeys ? deviceKeys : undefined,
           default_payload_json: parsed.value,
         };
       } else if (channelType === "ntfy") {
@@ -311,7 +412,9 @@ export default function ChannelsPage() {
     auth,
     barkDefaultPayloadJson,
     barkDeviceKey,
+    barkDeviceKeysText,
     barkServerBaseUrl,
+    barkUseDeviceKeys,
     channelType,
     editingId,
     load,
@@ -337,6 +440,35 @@ export default function ChannelsPage() {
     resetForm,
   ]);
 
+  const sendChannelTest = useCallback(
+    async (id: string) => {
+      setTestError(null);
+      setTestLoading(true);
+      try {
+        const res = await authedFetch(auth, `/api/channels/${id}/test`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: testTitle.trim() || null, body: testBody.trim() || null }),
+        });
+        if (!res.ok) {
+          setTestError((await readApiError(res)).message);
+          setTestResult(null);
+          return;
+        }
+        try {
+          const data = await readJson<ChannelTestResp>(res);
+          setTestResult(data);
+        } catch {
+          setTestError("Invalid response from server.");
+          setTestResult(null);
+        }
+      } finally {
+        setTestLoading(false);
+      }
+    },
+    [auth, testBody, testTitle],
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -345,7 +477,7 @@ export default function ChannelsPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
           {error}
         </div>
       )}
@@ -384,21 +516,61 @@ export default function ChannelsPage() {
                 <div className="text-xs font-medium text-muted-foreground">Server base URL</div>
                 <input
                   className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-                  placeholder="https://your-bark.example.com"
+                  placeholder="https://bark.example.com (or paste https://bark.example.com/<device_key>/)"
                   value={barkServerBaseUrl}
                   onChange={(e) => setBarkServerBaseUrl(e.target.value)}
+                  onBlur={(e) => {
+                    const split = trySplitBarkUrl(e.target.value);
+                    if (!split) return;
+                    setBarkServerBaseUrl(split.serverBaseUrl);
+                    if (barkUseDeviceKeys) {
+                      if (!barkDeviceKeysText.trim()) {
+                        setBarkDeviceKeysText(split.deviceKey);
+                      }
+                    } else {
+                      if (!barkDeviceKey.trim()) setBarkDeviceKey(split.deviceKey);
+                    }
+                  }}
                   disabled={!canCreate || submitting}
                 />
               </label>
-              <label className="block">
-                <div className="text-xs font-medium text-muted-foreground">Device key (optional)</div>
+              <label className="flex items-end gap-2">
                 <input
-                  className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
-                  value={barkDeviceKey}
-                  onChange={(e) => setBarkDeviceKey(e.target.value)}
+                  type="checkbox"
+                  checked={barkUseDeviceKeys}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    setBarkUseDeviceKeys(on);
+                    if (!on) {
+                      setBarkDeviceKeysText("");
+                    }
+                  }}
                   disabled={!canCreate || submitting}
                 />
+                <span className="text-sm text-muted-foreground">Multiple devices</span>
               </label>
+              {barkUseDeviceKeys ? (
+                <label className="block md:col-span-2">
+                  <div className="text-xs font-medium text-muted-foreground">Device keys</div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">One per line</div>
+                  <textarea
+                    className="mt-1 h-20 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
+                    value={barkDeviceKeysText}
+                    onChange={(e) => setBarkDeviceKeysText(e.target.value)}
+                    disabled={!canCreate || submitting}
+                  />
+                </label>
+              ) : (
+                <label className="block">
+                  <div className="text-xs font-medium text-muted-foreground">Device key</div>
+                  <input
+                    className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
+                    value={barkDeviceKey}
+                    onChange={(e) => setBarkDeviceKey(e.target.value)}
+                    disabled={!canCreate || submitting}
+                  />
+                </label>
+              )}
               <label className="block md:col-span-2">
                 <div className="text-xs font-medium text-muted-foreground">Default payload JSON</div>
                 <textarea
@@ -641,7 +813,7 @@ export default function ChannelsPage() {
           </div>
 
           {!canCreate && (
-            <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">Verify your email to create channels.</div>
+            <div className="mt-2 text-xs text-warning">Verify your email to create channels.</div>
           )}
         </div>
       </div>
@@ -655,44 +827,132 @@ export default function ChannelsPage() {
         ) : (
           <div className="divide-y divide-border">
             {sorted.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div>
-                  <div className="text-sm font-medium text-foreground">{c.name}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {c.type} · Created: {new Date(c.created_at).toLocaleString()}
+              <div key={c.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">{c.name}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {c.type} · Created: {new Date(c.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      disabled={!canCreate || submitting}
+                      data-testid={`channel-send-test-toggle-${c.id}`}
+                      onClick={() => {
+                        setTestError(null);
+                        setTestResult(null);
+                        setTestChannelId((cur) => (cur === c.id ? null : c.id));
+                      }}
+                    >
+                      Send test
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      disabled={!canCreate || submitting}
+                      onClick={() => {
+                        void beginEdit(c.id);
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      disabled={!canCreate || submitting}
+                      onClick={async () => {
+                        if (!confirm("Delete this channel?")) return;
+                        const res = await authedFetch(auth, `/api/channels/${c.id}`, {
+                          method: "DELETE",
+                        });
+                        if (!res.ok) {
+                          setError((await readApiError(res)).message);
+                          return;
+                        }
+                        if (editingId === c.id) resetForm();
+                        if (testChannelId === c.id) setTestChannelId(null);
+                        void load();
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                    disabled={!canCreate || submitting}
-                    onClick={() => {
-                      void beginEdit(c.id);
-                    }}
+
+                {testChannelId === c.id && (
+                  <div
+                    className="mt-3 rounded-xl border border-border bg-muted/40 p-3"
+                    data-testid={`channel-send-test-panel-${c.id}`}
                   >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                    disabled={!canCreate || submitting}
-                    onClick={async () => {
-                      if (!confirm("Delete this channel?")) return;
-                      const res = await authedFetch(auth, `/api/channels/${c.id}`, {
-                        method: "DELETE",
-                      });
-                      if (!res.ok) {
-                        setError((await readApiError(res)).message);
-                        return;
-                      }
-                      if (editingId === c.id) resetForm();
-                      void load();
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
+                    <div className="text-xs font-semibold text-foreground">Send test notification</div>
+                    <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                      <label className="block">
+                        <div className="text-xs font-medium text-muted-foreground">Title (optional)</div>
+                        <input
+                          className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                          value={testTitle}
+                          onChange={(e) => setTestTitle(e.target.value)}
+                          disabled={testLoading}
+                        />
+                      </label>
+                      <label className="block md:col-span-2">
+                        <div className="text-xs font-medium text-muted-foreground">Body</div>
+                        <textarea
+                          className="mt-1 h-20 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                          value={testBody}
+                          onChange={(e) => setTestBody(e.target.value)}
+                          disabled={testLoading}
+                        />
+                      </label>
+                    </div>
+
+                    {testError && (
+                      <div className="mt-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
+                        {testError}
+                      </div>
+                    )}
+
+                    {testResult && (
+                      <div className="mt-2 rounded-xl border border-border bg-card px-3 py-2">
+                        <div className="text-xs font-semibold text-foreground">
+                          Result:{" "}
+                          <span className={testResult.ok ? "text-success" : "text-destructive"}>
+                            {testResult.ok ? "sent" : "failed"}
+                          </span>
+                        </div>
+                        <pre className="mt-2 overflow-auto rounded-lg bg-muted px-3 py-2 text-xs text-foreground">
+                          {JSON.stringify(testResult.provider_response, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        disabled={testLoading}
+                        onClick={() => void sendChannelTest(c.id)}
+                        data-testid={`channel-send-test-send-${c.id}`}
+                      >
+                        {testLoading ? "Sending..." : "Send"}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                        disabled={testLoading}
+                        onClick={() => {
+                          setTestChannelId(null);
+                        }}
+                        data-testid={`channel-send-test-close-${c.id}`}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

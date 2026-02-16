@@ -46,12 +46,12 @@ export function VerifyEmailClient({ token }: { token: string | null }) {
             <div className="mt-4 text-sm text-muted-foreground">Verifying...</div>
           )}
           {status === "ok" && (
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <div className="mt-4 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
               Email verified.
             </div>
           )}
           {status === "err" && (
-            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+            <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
               {error ?? "Verification failed."}
             </div>
           )}

@@ -7,6 +7,20 @@ import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 import type { Channel, IngestEndpoint, Rule } from "@/lib/types";
 
+function parseJsonObject(text: string): { ok: true; value: Record<string, unknown> } | { ok: false; error: string } {
+  const trimmed = text.trim();
+  if (!trimmed) return { ok: false, error: "JSON is required." };
+  try {
+    const v = JSON.parse(trimmed) as unknown;
+    if (!v || typeof v !== "object" || Array.isArray(v)) {
+      return { ok: false, error: "JSON must be an object." };
+    }
+    return { ok: true, value: v as Record<string, unknown> };
+  } catch {
+    return { ok: false, error: "Invalid JSON." };
+  }
+}
+
 export default function RulesPage() {
   const auth = useAuth();
   const canCreate = Boolean(auth.user?.email_verified_at);
@@ -25,16 +39,20 @@ export default function RulesPage() {
   const [regex, setRegex] = useState("");
   const [payloadJson, setPayloadJson] = useState('{\n  "title": "Ingest {{ingest_endpoint.name}}",\n  "body": "{{message.payload_text}}"\n}');
 
-  const [testRuleId, setTestRuleId] = useState<string | null>(null);
   const [testEndpointId, setTestEndpointId] = useState("");
   const [testContentType, setTestContentType] = useState("");
   const [testPayloadText, setTestPayloadText] = useState("Hello from rule test");
   const [testLoading, setTestLoading] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{
-    matches: boolean;
-    channel_type: string;
-    rendered_payload: unknown;
+    matched_count: number;
+    total_rules: number;
+    matches: Array<{
+      rule: Rule;
+      channel: Channel;
+      channel_type: string;
+      rendered_payload: unknown;
+    }>;
   } | null>(null);
 
   const load = useCallback(async () => {
@@ -79,6 +97,12 @@ export default function RulesPage() {
     }
   }, [channels, channelId]);
 
+  useEffect(() => {
+    if (!testEndpointId && endpoints.length) {
+      setTestEndpointId(endpoints[0].id);
+    }
+  }, [endpoints, testEndpointId]);
+
   const sortedRules = useMemo(
     () => [...rules].sort((a, b) => b.created_at.localeCompare(a.created_at)),
     [rules],
@@ -103,8 +127,20 @@ export default function RulesPage() {
       : selectedChannelType === "ntfy"
         ? "ntfy payload template (JSON)"
         : selectedChannelType === "mqtt"
-          ? "MQTT payload template (JSON)"
-          : "Payload template (JSON)";
+           ? "MQTT payload template (JSON)"
+           : "Payload template (JSON)";
+
+  const regexValidation = useMemo(() => {
+    const raw = regex.trim();
+    if (!raw) return { ok: true as const, error: "" };
+    try {
+      new RegExp(raw, "i");
+      return { ok: true as const, error: "" };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { ok: false as const, error: msg || "Invalid regex" };
+    }
+  }, [regex]);
 
   return (
     <div className="space-y-6">
@@ -114,7 +150,7 @@ export default function RulesPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
           {error}
         </div>
       )}
@@ -200,11 +236,17 @@ export default function RulesPage() {
           <label className="block">
             <div className="text-xs font-medium text-muted-foreground">Payload regex (optional)</div>
             <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
+              className={
+                "mt-1 w-full rounded-xl border bg-card px-3 py-2 text-sm font-mono " +
+                (regexValidation.ok ? "border-border" : "border-destructive/40")
+              }
               value={regex}
               onChange={(e) => setRegex(e.target.value)}
               disabled={!canCreate}
             />
+            {!regexValidation.ok && (
+              <div className="mt-1 text-xs text-destructive">Invalid regex: {regexValidation.error}</div>
+            )}
           </label>
         </div>
 
@@ -224,16 +266,21 @@ export default function RulesPage() {
         <div className="mt-3">
           <button
             className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || !name.trim() || !channelId}
+            disabled={!canCreate || !name.trim() || !channelId || !regexValidation.ok}
             onClick={async () => {
               setError(null);
-              let payload: Record<string, unknown>;
-              try {
-                payload = JSON.parse(payloadJson) as Record<string, unknown>;
-              } catch {
-                setError("Payload template is not valid JSON.");
+
+              if (!regexValidation.ok) {
+                setError(`Payload regex is invalid: ${regexValidation.error}`);
                 return;
               }
+
+              const parsedPayload = parseJsonObject(payloadJson);
+              if (!parsedPayload.ok) {
+                setError(`Payload template: ${parsedPayload.error}`);
+                return;
+              }
+              const payload = parsedPayload.value;
               const contains = containsLines
                 .split("\n")
                 .map((s) => s.trim())
@@ -274,9 +321,146 @@ export default function RulesPage() {
             Create
           </button>
           {!canCreate && (
-            <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">Verify your email to create rules.</div>
+            <div className="mt-2 text-xs text-warning">Verify your email to create rules.</div>
           )}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="text-sm font-semibold">Rule tester</div>
+        <div className="mt-1 text-sm text-muted-foreground">
+          Provide a sample message; Beacon Spear will show which rules would trigger.
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label className="block">
+            <div className="text-xs font-medium text-muted-foreground">Ingest endpoint</div>
+            <select
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              value={testEndpointId}
+              onChange={(e) => setTestEndpointId(e.target.value)}
+              disabled={!canCreate || testLoading || endpoints.length === 0}
+            >
+              {endpoints.map((ep) => (
+                <option key={ep.id} value={ep.id}>
+                  {ep.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <div className="text-xs font-medium text-muted-foreground">Content-Type (optional)</div>
+            <input
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
+              value={testContentType}
+              onChange={(e) => setTestContentType(e.target.value)}
+              disabled={!canCreate || testLoading}
+              placeholder="text/plain"
+            />
+          </label>
+        </div>
+
+        <label className="mt-3 block">
+          <div className="text-xs font-medium text-muted-foreground">Payload text</div>
+          <textarea
+            className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
+            value={testPayloadText}
+            onChange={(e) => setTestPayloadText(e.target.value)}
+            disabled={!canCreate || testLoading}
+          />
+        </label>
+
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            disabled={!canCreate || !testEndpointId || testLoading}
+            onClick={async () => {
+              setTestError(null);
+              setTestResult(null);
+              setTestLoading(true);
+              try {
+                const res = await authedFetch(auth, "/api/rules/test", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    ingest_endpoint_id: testEndpointId,
+                    content_type: testContentType.trim() || null,
+                    payload_text: testPayloadText,
+                  }),
+                });
+                if (!res.ok) {
+                  setTestError((await readApiError(res)).message);
+                  return;
+                }
+                const data = await readJson<{
+                  matched_count: number;
+                  total_rules: number;
+                  matches: Array<{
+                    rule: Rule;
+                    channel: Channel;
+                    channel_type: string;
+                    rendered_payload: unknown;
+                  }>;
+                }>(res);
+                setTestResult(data);
+              } finally {
+                setTestLoading(false);
+              }
+            }}
+          >
+            {testLoading ? "Testing..." : "Find triggered rules"}
+          </button>
+          <button
+            className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted"
+            type="button"
+            onClick={() => {
+              setTestError(null);
+              setTestResult(null);
+            }}
+          >
+            Clear
+          </button>
+        </div>
+
+        {testError && (
+          <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
+            {testError}
+          </div>
+        )}
+
+        {testResult && (
+          <div className="mt-3 space-y-3">
+            <div className="text-xs text-muted-foreground">
+              Matched {testResult.matched_count} of {testResult.total_rules} enabled rule(s)
+            </div>
+            {testResult.matches.length === 0 ? (
+              <div className="rounded-xl border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                No rules would trigger for this sample.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {testResult.matches.map((m) => (
+                  <div key={m.rule.id} className="rounded-xl border border-border bg-card p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-foreground">{m.rule.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {m.channel.name} ({m.channel_type})
+                      </div>
+                    </div>
+                    <pre className="mt-2 overflow-auto rounded-xl border border-border bg-muted p-3 text-xs">
+                      {JSON.stringify(m.rendered_payload, null, 2)}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!canCreate && (
+          <div className="mt-2 text-xs text-warning">Verify your email to run tests.</div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border bg-card">
@@ -292,23 +476,9 @@ export default function RulesPage() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-foreground">{r.name}</div>
                   <div className="flex items-center gap-3">
-                    <div className={"text-xs font-medium " + (r.enabled ? "text-emerald-700" : "text-muted-foreground")}>
+                    <div className={"text-xs font-medium " + (r.enabled ? "text-success" : "text-muted-foreground")}>
                       {r.enabled ? "enabled" : "disabled"}
                     </div>
-                    <button
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                      disabled={!canCreate || endpoints.length === 0}
-                      onClick={() => {
-                        setTestError(null);
-                        setTestResult(null);
-                        setTestRuleId((prev) => (prev === r.id ? null : r.id));
-                        if (!testEndpointId && endpoints.length) {
-                          setTestEndpointId(endpoints[0].id);
-                        }
-                      }}
-                    >
-                      Test
-                    </button>
                     <button
                       className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
                       disabled={!canCreate}
@@ -331,114 +501,6 @@ export default function RulesPage() {
                 <div className="mt-1 text-xs text-muted-foreground">
                   Channel: {channelNameById.get(r.channel_id) ?? r.channel_id}
                 </div>
-
-                {testRuleId === r.id && (
-                  <div className="mt-3 rounded-xl border border-border bg-card p-3">
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <label className="block">
-                        <div className="text-xs font-medium text-muted-foreground">Ingest endpoint</div>
-                        <select
-                          className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-                          value={testEndpointId}
-                          onChange={(e) => setTestEndpointId(e.target.value)}
-                          disabled={!canCreate || testLoading}
-                        >
-                          {endpoints.map((ep) => (
-                            <option key={ep.id} value={ep.id}>
-                              {ep.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="block">
-                        <div className="text-xs font-medium text-muted-foreground">Content-Type (optional)</div>
-                        <input
-                          className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
-                          value={testContentType}
-                          onChange={(e) => setTestContentType(e.target.value)}
-                          disabled={!canCreate || testLoading}
-                          placeholder="text/plain"
-                        />
-                      </label>
-                    </div>
-
-                    <label className="mt-3 block">
-                      <div className="text-xs font-medium text-muted-foreground">Payload text</div>
-                      <textarea
-                        className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
-                        value={testPayloadText}
-                        onChange={(e) => setTestPayloadText(e.target.value)}
-                        disabled={!canCreate || testLoading}
-                      />
-                    </label>
-
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                        disabled={!canCreate || !testEndpointId || testLoading}
-                        onClick={async () => {
-                          setTestError(null);
-                          setTestResult(null);
-                          setTestLoading(true);
-                          try {
-                            const res = await authedFetch(auth, `/api/rules/${r.id}/test`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                ingest_endpoint_id: testEndpointId,
-                                content_type: testContentType.trim() || null,
-                                payload_text: testPayloadText,
-                              }),
-                            });
-                            if (!res.ok) {
-                              setTestError((await readApiError(res)).message);
-                              return;
-                            }
-                            const data = await readJson<{
-                              matches: boolean;
-                              channel_type: string;
-                              rendered_payload: unknown;
-                            }>(res);
-                            setTestResult(data);
-                          } finally {
-                            setTestLoading(false);
-                          }
-                        }}
-                      >
-                        Run test
-                      </button>
-                      <button
-                        className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted"
-                        type="button"
-                        onClick={() => {
-                          setTestRuleId(null);
-                          setTestError(null);
-                          setTestResult(null);
-                        }}
-                      >
-                        Close
-                      </button>
-                    </div>
-
-                    {testError && (
-                      <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
-                        {testError}
-                      </div>
-                    )}
-
-                    {testResult && (
-                      <div className="mt-3 grid gap-2">
-                        <div className="text-xs text-muted-foreground">
-                          Matches: {testResult.matches ? "true" : "false"} · Channel type: {testResult.channel_type}
-                        </div>
-                        <pre className="overflow-auto rounded-xl border border-border bg-muted p-3 text-xs">
-                          {JSON.stringify(testResult.rendered_payload, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             ))}
           </div>

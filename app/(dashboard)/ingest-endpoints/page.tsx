@@ -50,11 +50,22 @@ export default function IngestEndpointsPage() {
     void load();
   }, [load]);
 
-  const buildIngestUrl = (endpointId: string) => {
-    if (typeof window !== "undefined") {
-      return `${window.location.origin}/api/ingest/${endpointId}`;
+  const uuidToHex = (id: string): string | null => {
+    const s = (id || "").trim();
+    if (!s) return null;
+    if (/^[0-9a-f]{32}$/i.test(s)) return s.toLowerCase();
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) {
+      return s.replace(/-/g, "").toLowerCase();
     }
-    return `/api/ingest/${endpointId}`;
+    return null;
+  };
+
+  const buildIngestUrl = (endpointId: string) => {
+    const hex = uuidToHex(endpointId) ?? endpointId;
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/api/ingest/${hex}`;
+    }
+    return `/api/ingest/${hex}`;
   };
 
   const copyToClipboard = async (text: string) => {
@@ -93,36 +104,36 @@ export default function IngestEndpointsPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
           {error}
         </div>
       )}
 
       {created && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30">
-          <div className="text-sm font-semibold text-emerald-900">Endpoint created</div>
+        <div className="rounded-2xl border border-success/20 bg-success/10 p-4 dark:border-success/30 dark:bg-success/10">
+          <div className="text-sm font-semibold text-success">Endpoint created</div>
           <div className="mt-2 grid gap-2 text-sm">
             <div>
-              <div className="text-xs font-medium text-emerald-900/80">Ingest key (copy now)</div>
-              <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
+              <div className="text-xs font-medium text-success">Ingest key (copy now)</div>
+              <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_key}
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium text-emerald-900/80">Ingest URL</div>
-              <div className="mt-1 break-all rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
+              <div className="text-xs font-medium text-success">Ingest URL</div>
+              <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_url}
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium text-emerald-900/80">curl</div>
-              <pre className="mt-1 overflow-auto rounded-xl border border-emerald-200 bg-card px-3 py-2 font-mono text-xs text-foreground">
+              <div className="text-xs font-medium text-success">curl</div>
+              <pre className="mt-1 overflow-auto rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`}
               </pre>
             </div>
           </div>
           <button
-            className="mt-3 rounded-xl border border-emerald-200 bg-card px-3 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100"
+            className="mt-3 rounded-xl border border-success/20 bg-card px-3 py-2 text-xs font-medium text-success hover:bg-success/10"
             onClick={() => setCreated(null)}
           >
             Dismiss
@@ -165,9 +176,7 @@ export default function IngestEndpointsPage() {
           </button>
         </div>
         {!canCreate && (
-          <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-            Verify your email to create endpoints.
-          </div>
+          <div className="mt-2 text-xs text-warning">Verify your email to create endpoints.</div>
         )}
       </div>
 
@@ -189,7 +198,11 @@ export default function IngestEndpointsPage() {
                     <div className="mt-1 text-xs text-muted-foreground">
                       Created: {new Date(ep.created_at).toLocaleString()} · Last used:{" "}
                       {ep.last_used_at ? new Date(ep.last_used_at).toLocaleString() : "never"}
-                      {revoked ? " · Revoked" : ""}
+                      {revoked && (
+                        <span className="ml-2 inline-flex items-center rounded-md border border-destructive/20 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                          Revoked
+                        </span>
+                      )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span className="font-medium">URL:</span>
@@ -234,6 +247,27 @@ export default function IngestEndpointsPage() {
                       }}
                     >
                       Revoke
+                    </button>
+                    <button
+                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                      disabled={!canCreate}
+                      onClick={async () => {
+                        if (!confirm("Archive this ingest endpoint? It will be hidden and will stop ingest.")) {
+                          return;
+                        }
+                        setError(null);
+                        const res = await authedFetch(auth, `/api/ingest-endpoints/${ep.id}`, {
+                          method: "DELETE",
+                        });
+                        if (!res.ok) {
+                          const err = await readApiError(res);
+                          setError(err.message);
+                          return;
+                        }
+                        void load();
+                      }}
+                    >
+                      Archive
                     </button>
                   </div>
                 </div>

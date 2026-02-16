@@ -72,7 +72,7 @@ export default function MessagesPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
           {error}
         </div>
       )}
@@ -111,7 +111,7 @@ export default function MessagesPage() {
         <div className="mt-1 text-sm text-muted-foreground">Soft-delete messages older than N days.</div>
 
         {batchMessage && (
-          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <div className="mt-3 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-sm text-success dark:border-success/30 dark:bg-success/10">
             {batchMessage}
           </div>
         )}
@@ -174,7 +174,7 @@ export default function MessagesPage() {
           Delete
         </button>
         {!canMutate && (
-          <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">Verify your email to delete messages.</div>
+          <div className="mt-2 text-xs text-warning">Verify your email to delete messages.</div>
         )}
       </div>
 
@@ -210,10 +210,10 @@ export default function MessagesPage() {
                     </div>
                     <div className="shrink-0 text-right text-xs text-muted-foreground">
                       <div>
-                        sent {d.sent} · failed {d.failed}
+                        <span className="text-success">sent {d.sent}</span> · <span className="text-destructive">failed {d.failed}</span>
                       </div>
                       <div>
-                        pending {pending}
+                        <span className={pending > 0 ? "text-warning" : "text-muted-foreground"}>pending {pending}</span>
                       </div>
                     </div>
                   </div>

@@ -8,6 +8,14 @@ import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 import type { Delivery, MessageDetail } from "@/lib/types";
 
+const deliveryStatusBadgeClass: Record<Delivery["status"], string> = {
+  queued: "border-border bg-card text-muted-foreground",
+  sending: "border-info/20 bg-info/10 text-info",
+  retry: "border-warning/20 bg-warning/10 text-warning",
+  sent: "border-success/20 bg-success/10 text-success",
+  failed: "border-destructive/20 bg-destructive/10 text-destructive",
+};
+
 export default function MessageDetailPage() {
   const auth = useAuth();
   const params = useParams<{ id?: string | string[] }>();
@@ -59,7 +67,7 @@ export default function MessageDetailPage() {
   if (loading) return <div className="text-sm text-muted-foreground">Loading...</div>;
   if (error) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-200">
+      <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
         {error}
       </div>
     );
@@ -90,7 +98,7 @@ export default function MessageDetailPage() {
             Delete
           </button>
           {!canDelete && (
-            <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">Verify your email to delete messages.</div>
+            <div className="mt-2 text-xs text-warning">Verify your email to delete messages.</div>
           )}
         </div>
       </div>
@@ -135,11 +143,20 @@ export default function MessageDetailPage() {
             {deliveries.map((d) => (
               <div key={d.id} className="px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{d.status}</div>
+                  <div className="text-sm font-medium">
+                    <span
+                      className={
+                        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide " +
+                        deliveryStatusBadgeClass[d.status]
+                      }
+                    >
+                      {d.status}
+                    </span>
+                  </div>
                   <div className="text-xs text-muted-foreground">attempts {d.attempt_count}</div>
                 </div>
                 {d.last_error && (
-                  <div className="mt-1 text-xs text-rose-700">{d.last_error}</div>
+                  <div className="mt-1 text-xs text-destructive">{d.last_error}</div>
                 )}
                 {d.provider_response != null && (
                   <pre className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-border bg-muted p-3 font-mono text-xs">
