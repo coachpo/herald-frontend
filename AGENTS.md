@@ -4,7 +4,7 @@
 
 Next.js (App Router) dashboard UI.
 
-- Calls backend via same-origin `/api/*` (Next rewrites proxy to `BACKEND_BASE_URL`).
+- Calls backend via same-origin `/api/*` (Route Handler proxy to a baked backend origin).
 - Health check proxied: `GET /healthz`.
 
 ## Build And Test Commands
@@ -23,9 +23,9 @@ Run these from `frontend/`.
 - Start dev server:
   - `pnpm dev -p 3000`
 
-If the backend is not running on `http://localhost:8000`, set:
+To point at a different backend during local development, set:
 
-- `BACKEND_BASE_URL=http://localhost:8000`
+- `NEXT_PUBLIC_API_URL=http://localhost:8100`
 
 ## Testing Notes
 

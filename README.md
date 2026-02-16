@@ -12,4 +12,4 @@ pnpm dev
 
 Defaults:
 - frontend: http://localhost:3000
-- backend: `BACKEND_BASE_URL` (default http://localhost:8000)
+- backend: baked into the build (default `http://localhost:8100`)
