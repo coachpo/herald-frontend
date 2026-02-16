@@ -21,6 +21,7 @@ export default function IngestEndpointsPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreateResp | null>(null);
+  const [createdCopiedField, setCreatedCopiedField] = useState<"key" | "url" | "curl" | null>(null);
   const [copiedEndpointId, setCopiedEndpointId] = useState<string | null>(null);
 
   const canCreate = Boolean(auth.user?.email_verified_at);
@@ -97,27 +98,103 @@ export default function IngestEndpointsPage() {
           <div className="text-sm font-semibold text-success">Endpoint created</div>
           <div className="mt-2 grid gap-2 text-sm">
             <div>
-              <div className="text-xs font-medium text-success">Ingest key (copy now)</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs font-medium text-success">Ingest key (copy now)</div>
+                <button
+                  type="button"
+                  className={
+                    "rounded-lg border px-2.5 py-1 text-[11px] font-semibold " +
+                    (createdCopiedField === "key"
+                      ? "border-success/30 bg-success/20 text-success"
+                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                  }
+                  onClick={async () => {
+                    const ok = await copyToClipboard(created.ingest_key);
+                    if (!ok) {
+                      setError("Copy failed.");
+                      return;
+                    }
+                    setCreatedCopiedField("key");
+                    window.setTimeout(() => {
+                      setCreatedCopiedField((prev) => (prev === "key" ? null : prev));
+                    }, 1200);
+                  }}
+                >
+                  {createdCopiedField === "key" ? "Copied" : "Copy key"}
+                </button>
+              </div>
               <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_key}
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium text-success">Ingest URL</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs font-medium text-success">Ingest URL</div>
+                <button
+                  type="button"
+                  className={
+                    "rounded-lg border px-2.5 py-1 text-[11px] font-semibold " +
+                    (createdCopiedField === "url"
+                      ? "border-success/30 bg-success/20 text-success"
+                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                  }
+                  onClick={async () => {
+                    const ok = await copyToClipboard(created.ingest_url);
+                    if (!ok) {
+                      setError("Copy failed.");
+                      return;
+                    }
+                    setCreatedCopiedField("url");
+                    window.setTimeout(() => {
+                      setCreatedCopiedField((prev) => (prev === "url" ? null : prev));
+                    }, 1200);
+                  }}
+                >
+                  {createdCopiedField === "url" ? "Copied" : "Copy URL"}
+                </button>
+              </div>
               <div className="mt-1 break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {created.ingest_url}
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium text-success">curl</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs font-medium text-success">curl</div>
+                <button
+                  type="button"
+                  className={
+                    "rounded-lg border px-2.5 py-1 text-[11px] font-semibold " +
+                    (createdCopiedField === "curl"
+                      ? "border-success/30 bg-success/20 text-success"
+                      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                  }
+                  onClick={async () => {
+                    const curl = `curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`;
+                    const ok = await copyToClipboard(curl);
+                    if (!ok) {
+                      setError("Copy failed.");
+                      return;
+                    }
+                    setCreatedCopiedField("curl");
+                    window.setTimeout(() => {
+                      setCreatedCopiedField((prev) => (prev === "curl" ? null : prev));
+                    }, 1200);
+                  }}
+                >
+                  {createdCopiedField === "curl" ? "Copied" : "Copy curl"}
+                </button>
+              </div>
               <pre className="mt-1 overflow-auto rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
                 {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`}
               </pre>
             </div>
           </div>
           <button
-            className="mt-3 rounded-xl border border-success/20 bg-card px-3 py-2 text-xs font-medium text-success hover:bg-success/10"
-            onClick={() => setCreated(null)}
+            className="mt-3 rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted"
+            onClick={() => {
+              setCreated(null);
+              setCreatedCopiedField(null);
+            }}
           >
             Dismiss
           </button>
@@ -150,6 +227,7 @@ export default function IngestEndpointsPage() {
                 return;
               }
               const data = await readJson<CreateResp>(res);
+              setCreatedCopiedField(null);
               setCreated({
                 ...data,
                 ingest_url: buildIngestUrl(data.endpoint.id),
@@ -197,7 +275,12 @@ export default function IngestEndpointsPage() {
                       </span>
                       <button
                         type="button"
-                        className="rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-medium hover:bg-muted"
+                        className={
+                          "rounded-lg border px-2 py-1 text-[11px] font-semibold " +
+                          (copiedEndpointId === ep.id
+                            ? "border-success/30 bg-success/20 text-success"
+                            : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20")
+                        }
                         onClick={async () => {
                           const ok = await copyToClipboard(ingestUrl);
                           if (!ok) {
