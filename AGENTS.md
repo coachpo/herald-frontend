@@ -4,8 +4,8 @@
 
 Next.js (App Router) dashboard UI.
 
-- Calls backend via same-origin `/api/*` (Route Handler proxy to a baked backend origin).
-- Health check proxied: `GET /healthz`.
+- Calls the backend API directly from the browser using `NEXT_PUBLIC_API_URL`.
+- Health check: `GET /healthz` (frontend server only; does not proxy backend).
 
 ## Build And Test Commands
 

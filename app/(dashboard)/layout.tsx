@@ -1,3 +1,5 @@
+"use client";
+
 import { AuthGate } from "@/components/AuthGate";
 import { AppShell } from "@/components/AppShell";
 import { AuthProvider } from "@/lib/auth";

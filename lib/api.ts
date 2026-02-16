@@ -1,5 +1,7 @@
 import type { ApiError } from "@/lib/types";
 
+import { buildPublicApiUrl } from "@/lib/public-api";
+
 export async function readJson<T>(res: Response): Promise<T> {
   const text = await res.text();
   return text ? (JSON.parse(text) as T) : ({} as T);
@@ -27,7 +29,8 @@ export async function apiFetch(
   }
   h.set("Accept", "application/json");
 
-  return fetch(path, {
+  const url = buildPublicApiUrl(path);
+  return fetch(url, {
     ...rest,
     headers: h,
     credentials: "omit",

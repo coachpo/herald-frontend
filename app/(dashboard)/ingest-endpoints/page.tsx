@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
+import { buildIngestUrl } from "@/lib/public-api";
 import type { IngestEndpoint } from "@/lib/types";
 
 type CreateResp = {
@@ -49,24 +50,6 @@ export default function IngestEndpointsPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const uuidToHex = (id: string): string | null => {
-    const s = (id || "").trim();
-    if (!s) return null;
-    if (/^[0-9a-f]{32}$/i.test(s)) return s.toLowerCase();
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) {
-      return s.replace(/-/g, "").toLowerCase();
-    }
-    return null;
-  };
-
-  const buildIngestUrl = (endpointId: string) => {
-    const hex = uuidToHex(endpointId) ?? endpointId;
-    if (typeof window !== "undefined") {
-      return `${window.location.origin}/api/ingest/${hex}`;
-    }
-    return `/api/ingest/${hex}`;
-  };
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -167,7 +150,10 @@ export default function IngestEndpointsPage() {
                 return;
               }
               const data = await readJson<CreateResp>(res);
-              setCreated(data);
+              setCreated({
+                ...data,
+                ingest_url: buildIngestUrl(data.endpoint.id),
+              });
               setName("");
               void load();
             }}
