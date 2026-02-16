@@ -2,6 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { CheckIcon, LaptopIcon, MoonIcon, SunIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 type Theme = "system" | "light" | "dark";
 
 const STORAGE_KEY = "beacon_theme";
@@ -13,12 +25,6 @@ function applyTheme(t: Theme) {
   } else {
     root.removeAttribute("data-theme");
   }
-}
-
-function nextTheme(t: Theme): Theme {
-  if (t === "system") return "light";
-  if (t === "light") return "dark";
-  return "system";
 }
 
 export function ThemeToggle() {
@@ -51,15 +57,55 @@ export function ThemeToggle() {
     return "Theme: Dark";
   }, [theme]);
 
+  const icon = useMemo(() => {
+    if (theme === "system") return <LaptopIcon />;
+    if (theme === "light") return <SunIcon />;
+    return <MoonIcon />;
+  }, [theme]);
+
   return (
-    <button
-      type="button"
-      className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
-      onClick={() => setTheme((t) => nextTheme(t))}
-      aria-label={label}
-      title={label}
-    >
-      {theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" aria-label={label} title={label}>
+          {icon}
+          {theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setTheme("system");
+          }}
+        >
+          <LaptopIcon />
+          System
+          {theme === "system" && <CheckIcon className="ml-auto" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setTheme("light");
+          }}
+        >
+          <SunIcon />
+          Light
+          {theme === "light" && <CheckIcon className="ml-auto" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setTheme("dark");
+          }}
+        >
+          <MoonIcon />
+          Dark
+          {theme === "dark" && <CheckIcon className="ml-auto" />}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -32,12 +33,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="min-w-0 max-w-[12rem] truncate text-xs text-muted-foreground sm:max-w-[20rem]">
               {user?.email}
             </div>
-            <button
-              className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium hover:bg-muted"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => void logout()}
             >
               Log out
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -48,17 +50,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
                 return (
                   <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={
-                        "block rounded-xl px-3 py-2 text-sm transition-colors " +
-                        (active
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted")
-                      }
+                    <Button
+                      asChild
+                      variant={active ? "default" : "ghost"}
+                      className="w-full justify-start"
                     >
-                      {item.label}
-                    </Link>
+                      <Link href={item.href}>{item.label}</Link>
+                    </Button>
                   </li>
                 );
               })}
