@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,7 +42,7 @@ export default function RootLayout({
   } catch (e) {}
 })();`}
         </Script>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );
