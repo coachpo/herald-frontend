@@ -5,10 +5,10 @@ Replace custom Tailwind CSS classes with standard [shadcn/ui](https://ui.shadcn.
 
 ## 2. Configuration & Setup
 
-### `tailwind.config.ts`
-- **Action:** Ensure configuration includes `tailwindcss-animate` plugin.
-- **Theme:** Extend the theme to map shadcn's CSS variables (`--radius`, `--popover`, etc.) to the existing design tokens or defaults.
-- **Path:** `frontend/tailwind.config.ts` (needs creation/update).
+### Tailwind (v4, CSS-first)
+- **Action:** Keep Tailwind configuration in `app/globals.css` (this repo uses Tailwind v4's `@import "tailwindcss"` + `@theme inline`).
+- **Animations:** Use `tw-animate-css` (installed) instead of the legacy `tailwindcss-animate` plugin.
+- **Base layer:** Add `@layer base` to apply `border-border` + `bg-background`/`text-foreground` globally.
 
 ### `globals.css`
 - **Action:** Add required shadcn CSS variables to `:root` and `.dark` blocks.
@@ -96,7 +96,7 @@ Run the following to initialize the library:
 
 ```bash
 npx shadcn@latest init
-npx shadcn@latest add button input label card alert badge select dropdown-menu dialog alert-dialog table switch textarea toggle-group scroll-area tooltip separator
+npx shadcn@latest add button input label card alert badge select dropdown-menu dialog alert-dialog table switch textarea toggle-group scroll-area tooltip separator sonner
 ```
 
 ## 5. Phased Implementation Plan
