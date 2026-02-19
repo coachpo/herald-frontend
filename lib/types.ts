@@ -64,7 +64,6 @@ export type Rule = {
   channel_id: string;
   filter: Record<string, unknown>;
   payload_template: Record<string, unknown>;
-  bark_payload_template: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 };
@@ -73,8 +72,11 @@ export type MessageSummary = {
   id: string;
   ingest_endpoint_id: string;
   received_at: string;
-  content_type: string | null;
-  payload_preview: string;
+  title: string | null;
+  body_preview: string;
+  group: string | null;
+  priority: number;
+  tags: string[];
   deliveries: {
     queued: number;
     sending: number;
@@ -88,8 +90,14 @@ export type MessageDetail = {
   id: string;
   ingest_endpoint_id: string;
   received_at: string;
+  title: string | null;
+  body: string;
+  group: string | null;
+  priority: number;
+  tags: string[];
+  url: string | null;
+  extras: Record<string, string>;
   content_type: string | null;
-  payload_text: string;
   headers: Record<string, string>;
   query: Record<string, string>;
   remote_ip: string;
@@ -101,7 +109,9 @@ export type Delivery = {
   id: string;
   message_id: string;
   rule_id: string;
+  rule_name?: string | null;
   channel_id: string;
+  channel_name?: string | null;
   status: "queued" | "sending" | "retry" | "sent" | "failed";
   attempt_count: number;
   next_attempt_at: string | null;

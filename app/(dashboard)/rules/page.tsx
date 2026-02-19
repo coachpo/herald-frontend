@@ -37,11 +37,14 @@ export default function RulesPage() {
   const [endpointIds, setEndpointIds] = useState<string[]>([]);
   const [containsLines, setContainsLines] = useState("");
   const [regex, setRegex] = useState("");
-  const [payloadJson, setPayloadJson] = useState('{\n  "title": "Ingest {{ingest_endpoint.name}}",\n  "body": "{{message.payload_text}}"\n}');
+  const [priorityMin, setPriorityMin] = useState("");
+  const [priorityMax, setPriorityMax] = useState("");
+  const [tagsCsv, setTagsCsv] = useState("");
+  const [groupExact, setGroupExact] = useState("");
+  const [payloadJson, setPayloadJson] = useState('{\n  "title": "Ingest {{ingest_endpoint.name}}",\n  "body": "{{message.body}}"\n}');
 
   const [testEndpointId, setTestEndpointId] = useState("");
-  const [testContentType, setTestContentType] = useState("");
-  const [testPayloadText, setTestPayloadText] = useState("Hello from rule test");
+  const [testPayloadJson, setTestPayloadJson] = useState('{\n  "title": "Rule test",\n  "body": "Hello from rule test",\n  "group": "deploys",\n  "priority": 3,\n  "tags": ["test"],\n  "url": "https://example.com",\n  "extras": {\n    "source": "ui"\n  }\n}');
   const [testLoading, setTestLoading] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{
@@ -141,6 +144,40 @@ export default function RulesPage() {
       return { ok: false as const, error: msg || "Invalid regex" };
     }
   }, [regex]);
+
+  const priorityValidation = useMemo(() => {
+    const min = priorityMin.trim();
+    const max = priorityMax.trim();
+    const minNum = min ? Number(min) : null;
+    const maxNum = max ? Number(max) : null;
+
+    if (minNum !== null && (!Number.isInteger(minNum) || minNum < 1 || minNum > 5)) {
+      return { ok: false as const, error: "Min priority must be 1-5." };
+    }
+    if (maxNum !== null && (!Number.isInteger(maxNum) || maxNum < 1 || maxNum > 5)) {
+      return { ok: false as const, error: "Max priority must be 1-5." };
+    }
+    if (minNum !== null && maxNum !== null && minNum > maxNum) {
+      return { ok: false as const, error: "Min priority cannot be greater than max priority." };
+    }
+    return { ok: true as const, error: "" };
+  }, [priorityMax, priorityMin]);
+
+  const testPayloadValidation = useMemo(() => {
+    const parsed = parseJsonObject(testPayloadJson);
+    if (!parsed.ok) {
+      return { ok: false as const, error: parsed.error, payload: null as Record<string, unknown> | null };
+    }
+    const body = parsed.value.body;
+    if (typeof body !== "string" || !body.trim()) {
+      return {
+        ok: false as const,
+        error: "Sample payload must include non-empty string field 'body'.",
+        payload: null as Record<string, unknown> | null,
+      };
+    }
+    return { ok: true as const, error: "", payload: parsed.value };
+  }, [testPayloadJson]);
 
   return (
     <div className="space-y-6">
@@ -248,7 +285,67 @@ export default function RulesPage() {
               <div className="mt-1 text-xs text-destructive">Invalid regex: {regexValidation.error}</div>
             )}
           </label>
+
+          <label className="block">
+            <div className="text-xs font-medium text-muted-foreground">Priority min (optional)</div>
+            <select
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              value={priorityMin}
+              onChange={(e) => setPriorityMin(e.target.value)}
+              disabled={!canCreate}
+            >
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <div className="text-xs font-medium text-muted-foreground">Priority max (optional)</div>
+            <select
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              value={priorityMax}
+              onChange={(e) => setPriorityMax(e.target.value)}
+              disabled={!canCreate}
+            >
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <label className="block md:col-span-2">
+            <div className="text-xs font-medium text-muted-foreground">Tags (comma-separated, optional)</div>
+            <input
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              value={tagsCsv}
+              onChange={(e) => setTagsCsv(e.target.value)}
+              placeholder="deploy,production"
+              disabled={!canCreate}
+            />
+          </label>
+
+          <label className="block md:col-span-2">
+            <div className="text-xs font-medium text-muted-foreground">Group exact match (optional)</div>
+            <input
+              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              value={groupExact}
+              onChange={(e) => setGroupExact(e.target.value)}
+              placeholder="deploys"
+              disabled={!canCreate}
+            />
+          </label>
         </div>
+
+        {!priorityValidation.ok && (
+          <div className="mt-2 text-xs text-destructive">{priorityValidation.error}</div>
+        )}
 
         <div className="mt-4">
           <div className="text-xs font-medium text-muted-foreground">{payloadLabel}</div>
@@ -259,19 +356,29 @@ export default function RulesPage() {
             disabled={!canCreate}
           />
           <div className="mt-2 text-xs text-muted-foreground">
-            Available vars: {"{{message.payload_text}}"}, {"{{ingest_endpoint.name}}"}.
+            Available vars: {"{{message.title}}"}, {"{{message.body}}"}, {"{{message.group}}"},
+            {" {{message.priority}}"}, {"{{message.tags}}"}, {"{{message.url}}"},
+            {" {{message.id}}"}, {"{{message.received_at}}"}, {"{{message.extras.<key>}}"},
+            {" {{request.content_type}}"}, {"{{request.remote_ip}}"}, {"{{request.user_agent}}"},
+            {" {{request.headers.<name>}}"}, {"{{request.query.<name>}}"},
+            {" {{ingest_endpoint.id}}"}, {"{{ingest_endpoint.name}}"}.
           </div>
         </div>
 
         <div className="mt-3">
           <button
             className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || !name.trim() || !channelId || !regexValidation.ok}
+            disabled={!canCreate || !name.trim() || !channelId || !regexValidation.ok || !priorityValidation.ok}
             onClick={async () => {
               setError(null);
 
               if (!regexValidation.ok) {
                 setError(`Payload regex is invalid: ${regexValidation.error}`);
+                return;
+              }
+
+              if (!priorityValidation.ok) {
+                setError(priorityValidation.error);
                 return;
               }
 
@@ -288,10 +395,31 @@ export default function RulesPage() {
               const filter: Record<string, unknown> = {};
               if (endpointIds.length) filter.ingest_endpoint_ids = endpointIds;
               if (contains.length || regex.trim()) {
-                filter.text = {
+                filter.body = {
                   contains: contains.length ? contains : undefined,
                   regex: regex.trim() || undefined,
                 };
+              }
+
+              const minPriority = priorityMin.trim() ? Number(priorityMin) : null;
+              const maxPriority = priorityMax.trim() ? Number(priorityMax) : null;
+              if (minPriority !== null || maxPriority !== null) {
+                filter.priority = {
+                  min: minPriority ?? undefined,
+                  max: maxPriority ?? undefined,
+                };
+              }
+
+              const tags = tagsCsv
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+              if (tags.length) {
+                filter.tags = tags;
+              }
+
+              if (groupExact.trim()) {
+                filter.group = groupExact.trim();
               }
 
               const res = await authedFetch(auth, "/api/rules", {
@@ -303,7 +431,6 @@ export default function RulesPage() {
                   channel_id: channelId,
                   filter,
                   payload_template: payload,
-                  bark_payload_template: payload,
                 }),
               });
               if (!res.ok) {
@@ -315,6 +442,10 @@ export default function RulesPage() {
               setEndpointIds([]);
               setContainsLines("");
               setRegex("");
+              setPriorityMin("");
+              setPriorityMax("");
+              setTagsCsv("");
+              setGroupExact("");
               void load();
             }}
           >
@@ -332,7 +463,7 @@ export default function RulesPage() {
           Provide a sample message; Beacon Spear will show which rules would trigger.
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3">
           <label className="block">
             <div className="text-xs font-medium text-muted-foreground">Ingest endpoint</div>
             <select
@@ -348,45 +479,43 @@ export default function RulesPage() {
               ))}
             </select>
           </label>
-
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Content-Type (optional)</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
-              value={testContentType}
-              onChange={(e) => setTestContentType(e.target.value)}
-              disabled={!canCreate || testLoading}
-              placeholder="text/plain"
-            />
-          </label>
         </div>
 
         <label className="mt-3 block">
-          <div className="text-xs font-medium text-muted-foreground">Payload text</div>
+          <div className="text-xs font-medium text-muted-foreground">Sample payload JSON</div>
           <textarea
-            className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
-            value={testPayloadText}
-            onChange={(e) => setTestPayloadText(e.target.value)}
+            className={
+              "mt-1 h-40 w-full resize-y rounded-xl border bg-card px-3 py-2 text-sm font-mono " +
+              (testPayloadValidation.ok ? "border-border" : "border-destructive/40")
+            }
+            value={testPayloadJson}
+            onChange={(e) => setTestPayloadJson(e.target.value)}
             disabled={!canCreate || testLoading}
           />
+          {!testPayloadValidation.ok && (
+            <div className="mt-1 text-xs text-destructive">{testPayloadValidation.error}</div>
+          )}
         </label>
 
         <div className="mt-3 flex items-center gap-2">
           <button
             className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || !testEndpointId || testLoading}
+            disabled={!canCreate || !testEndpointId || testLoading || !testPayloadValidation.ok}
             onClick={async () => {
               setTestError(null);
               setTestResult(null);
               setTestLoading(true);
               try {
+                if (!testPayloadValidation.ok || !testPayloadValidation.payload) {
+                  setTestError(testPayloadValidation.error);
+                  return;
+                }
                 const res = await authedFetch(auth, "/api/rules/test", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     ingest_endpoint_id: testEndpointId,
-                    content_type: testContentType.trim() || null,
-                    payload_text: testPayloadText,
+                    payload: testPayloadValidation.payload,
                   }),
                 });
                 if (!res.ok) {

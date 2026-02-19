@@ -176,7 +176,7 @@ export default function IngestEndpointsPage() {
                       : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                   }
                   onClick={async () => {
-                    const curl = `curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`;
+                    const curl = `curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' -H 'Content-Type: application/json' --data '{"body":"hello"}'`;
                     const ok = await copyToClipboard(curl);
                     if (!ok) {
                       setError("Copy failed.");
@@ -192,7 +192,7 @@ export default function IngestEndpointsPage() {
                 </Button>
               </div>
               <pre className="mt-1 max-w-full overflow-x-auto whitespace-pre-wrap break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
-                {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' --data 'hello'`}
+                {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' -H 'Content-Type: application/json' --data '{"body":"hello"}'`}
               </pre>
             </div>
           </div>
@@ -210,21 +210,21 @@ export default function IngestEndpointsPage() {
         </div>
       )}
 
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <div className="text-sm font-semibold">Create endpoint</div>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <Input
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={!canCreate}
-            />
-            <Button
-              disabled={!canCreate || !name.trim()}
-              onClick={async () => {
-                setError(null);
-                const res = await authedFetch(auth, "/api/ingest-endpoints", {
-                  method: "POST",
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="text-sm font-semibold">Create endpoint</div>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <Input
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={!canCreate}
+          />
+          <Button
+            disabled={!canCreate || !name.trim()}
+            onClick={async () => {
+              setError(null);
+              const res = await authedFetch(auth, "/api/ingest-endpoints", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name }),
               });
@@ -239,17 +239,17 @@ export default function IngestEndpointsPage() {
                 ...data,
                 ingest_url: buildIngestUrl(data.endpoint.id),
               });
-                setName("");
-                void load();
-              }}
-            >
-              Create
-            </Button>
-          </div>
-          {!canCreate && (
-            <div className="mt-2 text-xs text-warning">Verify your email to create endpoints.</div>
-          )}
+              setName("");
+              void load();
+            }}
+          >
+            Create
+          </Button>
         </div>
+        {!canCreate && (
+          <div className="mt-2 text-xs text-warning">Verify your email to create endpoints.</div>
+        )}
+      </div>
 
       <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3 text-sm font-semibold">Endpoints</div>
