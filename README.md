@@ -1,6 +1,6 @@
 ## Beacon Spear Frontend
 
-Next.js dashboard for Beacon Spear v0.1.
+React 19 + Vite + React Router dashboard for Beacon Spear.
 
 ## Local dev
 
@@ -12,11 +12,11 @@ pnpm dev
 
 Defaults:
 - frontend: http://localhost:3000
-- backend: baked into the build via `NEXT_PUBLIC_API_URL` (default `http://localhost:8100`), and called directly from the browser
+- backend: baked into the build via `VITE_API_URL` (default `http://localhost:8100`), and called directly from the browser
 
 ## UI (shadcn/ui)
 
-This app uses shadcn/ui-style components under `components/ui/`.
+This app uses shadcn/ui-style components under `src/components/ui/`.
 
 Add new primitives from the shadcn registry (run from `frontend/`):
 
@@ -25,5 +25,5 @@ npx shadcn@latest add <component>
 ```
 
 Notes:
-- Tailwind is configured in `app/globals.css` (Tailwind v4, CSS-first).
-- Global tokens live in `app/globals.css` (`--background`, `--foreground`, `--radius`, etc.).
+- Tailwind is configured in `src/globals.css` (Tailwind v4, CSS-first).
+- Global tokens live in `src/globals.css` (`--background`, `--foreground`, `--radius`, etc.).
