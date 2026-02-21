@@ -5,9 +5,7 @@ function isProbablyLocalhost(hostname: string): boolean {
 
 function normalizePublicApiUrl(raw: string): URL {
   const s = (raw || "").trim();
-  if (!s) {
-    throw new Error("VITE_API_URL is required");
-  }
+  if (!s) return new URL(window.location.origin);
 
   const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s}`;
   const url = new URL(withScheme);
