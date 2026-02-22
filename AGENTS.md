@@ -47,8 +47,8 @@ frontend/
 ├── vite.config.ts           # Vite config (@tailwindcss/vite, @vitejs/plugin-react)
 ├── tsconfig.json            # TypeScript config (paths: @/* -> src/*)
 ├── components.json          # shadcn/ui config (rsc: false)
-├── deploy/nginx.conf        # Nginx config for Docker (SPA fallback, /healthz)
-└── Dockerfile               # Multi-stage: pnpm build → nginx:alpine
+├── deploy/server.mjs        # Node.js static server for Docker (SPA fallback, /health)
+└── Dockerfile               # Multi-stage: pnpm build → node:20-alpine + server.mjs
 ```
 
 ## Key Patterns

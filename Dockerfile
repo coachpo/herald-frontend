@@ -19,11 +19,15 @@ COPY . .
 
 RUN pnpm build
 
-FROM nginx:alpine AS runner
+FROM node:20-alpine AS runner
 
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY deploy/server.mjs ./server.mjs
+COPY --from=build /app/dist ./dist
 
 EXPOSE 3100
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.mjs"]
