@@ -112,8 +112,8 @@ export default function ChannelsPage() {
   const [mqttKeepaliveSeconds, setMqttKeepaliveSeconds] = useState("60");
 
   const [testChannelId, setTestChannelId] = useState<string | null>(null);
-  const [testTitle, setTestTitle] = useState("Beacon Spear test");
-  const [testBody, setTestBody] = useState("Test notification from Beacon Spear");
+  const [testTitle, setTestTitle] = useState("Herald test");
+  const [testBody, setTestBody] = useState("Test notification from Herald");
   const [testLoading, setTestLoading] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<ChannelTestResp | null>(null);
@@ -176,8 +176,8 @@ export default function ChannelsPage() {
     setMqttKeepaliveSeconds("60");
 
     setTestChannelId(null);
-    setTestTitle("Beacon Spear test");
-    setTestBody("Test notification from Beacon Spear");
+    setTestTitle("Herald test");
+    setTestBody("Test notification from Herald");
     setTestLoading(false);
     setTestError(null);
     setTestResult(null);
@@ -694,7 +694,7 @@ export default function ChannelsPage() {
                 <div className="text-xs font-medium text-muted-foreground">Topic</div>
                 <input
                   className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
-                  placeholder="beacon/messages"
+                  placeholder="herald/messages"
                   value={mqttTopic}
                   onChange={(e) => setMqttTopic(e.target.value)}
                   disabled={!canCreate || submitting}

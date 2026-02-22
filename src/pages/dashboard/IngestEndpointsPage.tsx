@@ -175,7 +175,7 @@ export default function IngestEndpointsPage() {
                       : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                   }
                   onClick={async () => {
-                    const curl = `curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' -H 'Content-Type: application/json' --data '{"body":"hello"}'`;
+                    const curl = `curl -X POST '${created.ingest_url}' -H 'X-Herald-Ingest-Key: ${created.ingest_key}' -H 'Content-Type: application/json' --data '{"body":"hello"}'`;
                     const ok = await copyToClipboard(curl);
                     if (!ok) {
                       setError("Copy failed.");
@@ -191,7 +191,7 @@ export default function IngestEndpointsPage() {
                 </Button>
               </div>
               <pre className="mt-1 max-w-full overflow-x-auto whitespace-pre-wrap break-all rounded-xl border border-success/20 bg-card px-3 py-2 font-mono text-xs text-foreground">
-                {`curl -X POST '${created.ingest_url}' -H 'X-Beacon-Ingest-Key: ${created.ingest_key}' -H 'Content-Type: application/json' --data '{"body":"hello"}'`}
+                {`curl -X POST '${created.ingest_url}' -H 'X-Herald-Ingest-Key: ${created.ingest_key}' -H 'Content-Type: application/json' --data '{"body":"hello"}'`}
               </pre>
             </div>
           </div>

@@ -1,6 +1,6 @@
-## Beacon Spear Frontend
+## Herald Frontend
 
-React 19 + Vite + React Router dashboard for Beacon Spear.
+React 19 + Vite + React Router dashboard for Herald.
 
 ## Local dev
 

@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="mx-auto max-w-6xl px-4 py-6">
         <header className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
-            <div className="text-sm font-semibold tracking-tight">Beacon Spear</div>
+            <div className="text-sm font-semibold tracking-tight">Herald</div>
             <div className="text-xs text-muted-foreground">Ingest, store, forward.</div>
           </div>
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">

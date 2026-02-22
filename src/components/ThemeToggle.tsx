@@ -14,7 +14,7 @@ import {
 
 type Theme = "system" | "light" | "dark";
 
-const STORAGE_KEY = "beacon_theme";
+const STORAGE_KEY = "herald_theme";
 
 function applyTheme(t: Theme) {
   const root = document.documentElement;

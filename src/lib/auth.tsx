@@ -26,7 +26,7 @@ type AuthContextValue = AuthState & {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const REFRESH_TOKEN_STORAGE_KEY = "beacon_refresh_token";
+const REFRESH_TOKEN_STORAGE_KEY = "herald_refresh_token";
 
 function readStoredRefreshToken(): string | null {
   try {

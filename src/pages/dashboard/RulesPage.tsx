@@ -459,7 +459,7 @@ export default function RulesPage() {
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-sm font-semibold">Rule tester</div>
         <div className="mt-1 text-sm text-muted-foreground">
-          Provide a sample message; Beacon Spear will show which rules would trigger.
+          Provide a sample message; Herald will show which rules would trigger.
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3">

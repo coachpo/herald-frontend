@@ -11,7 +11,7 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 function useResolvedTheme(): "light" | "dark" | "system" {
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
     try {
-      const stored = localStorage.getItem("beacon_theme");
+      const stored = localStorage.getItem("herald_theme");
       if (stored === "light" || stored === "dark") return stored;
     } catch {}
     return "system";
