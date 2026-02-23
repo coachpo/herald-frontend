@@ -18,7 +18,6 @@ export default function AccountPage() {
   const [newPassword, setNewPassword] = useState("");
 
   const [deletePassword, setDeletePassword] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   async function callNoBody(path: string) {
@@ -160,7 +159,7 @@ export default function AccountPage() {
           Irreversible. Deletes your account and all messages, endpoints, channels, rules, and deliveries.
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="mt-3">
           <input
             className="rounded-xl border border-destructive/20 bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             type="password"
@@ -169,18 +168,11 @@ export default function AccountPage() {
             onChange={(e) => setDeletePassword(e.target.value)}
             disabled={deleteBusy}
           />
-          <input
-            className="rounded-xl border border-destructive/20 bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
-            placeholder="type DELETE"
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            disabled={deleteBusy}
-          />
         </div>
 
         <button
           className="mt-3 rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-white hover:bg-destructive/90 disabled:opacity-50"
-          disabled={deleteBusy || !deletePassword || deleteConfirm.trim() !== "DELETE"}
+          disabled={deleteBusy || !deletePassword}
           onClick={async () => {
             if (!confirm("Delete your account? This cannot be undone.")) return;
             setError(null);
@@ -190,7 +182,7 @@ export default function AccountPage() {
               const res = await authedFetch(auth, "/api/auth/delete-account", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password: deletePassword, confirm: deleteConfirm }),
+                body: JSON.stringify({ password: deletePassword }),
               });
               if (!res.ok) {
                 setError((await readApiError(res)).message);
