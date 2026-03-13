@@ -25,9 +25,9 @@ frontend/
 │   ├── router.tsx    # route tree
 │   ├── main.tsx      # BrowserRouter bootstrap
 │   └── globals.css   # Tailwind v4 tokens + theme styles
-├── vite.config.ts    # port 3000, local proxy, path alias
+├── vite.config.ts    # port 3000, path alias, local proxy
 ├── components.json   # shadcn/ui registry config
-└── deploy/server.mjs # static file server for Docker image
+└── deploy/server.mjs # static SPA server on port 3100
 ```
 
 ## Route Map
@@ -41,11 +41,12 @@ frontend/
 
 - `AuthLayout` and `DashboardLayout` both provide `AuthProvider`.
 - `AuthGate` triggers an immediate refresh on mount and redirects unauthenticated users to `/login?next=...`.
-- Refresh token lives in `sessionStorage`; access token stays in React state.
+- Refresh token lives in `sessionStorage` key `herald_refresh_token`; access token stays in React state.
 - JWT auto-refresh is scheduled 60 seconds before expiry.
 - `apiFetch()` injects `Authorization` and always uses `credentials: "omit"`.
 - `authedFetch()` retries once after a successful refresh on `401`.
-- `buildPublicApiUrl()` normalizes non-localhost HTTP origins to HTTPS.
+- `buildPublicApiUrl()` preserves localhost HTTP, upgrades non-localhost HTTP to HTTPS, and `buildIngestUrl()` converts UUIDs to hex for ingest URLs.
+- `vite.config.ts` still proxies `/api`, `/health`, and `/admin` to `http://localhost:8000`, but `start.sh full` normally relies on direct `VITE_API_URL=http://localhost:$BACKEND_PORT`.
 - Forms use `useState` plus manual validation; there is no active frontend test runner.
 - Theme preference uses `localStorage` key `herald_theme` and `<html data-theme>`.
 
@@ -56,6 +57,7 @@ frontend/
 - Channels page supports Bark, ntfy, MQTT, and Gotify CRUD plus live send-test calls.
 - Rules page supports filter editing, payload template JSON, and no-send test previews.
 - Ingest endpoints page shows the key once at creation and provides copyable URL/curl examples.
+- `deploy/server.mjs` serves `dist/` on port `3100`, exposes `GET /health`, applies immutable caching to static assets, and falls back to `index.html` for SPA routes.
 
 ## Security (Do Not)
 
