@@ -21,7 +21,7 @@ export type IngestEndpoint = {
 
 export type Channel = {
   id: string;
-  type: "bark" | "ntfy" | "mqtt";
+  type: "bark" | "ntfy" | "mqtt" | "gotify";
   name: string;
   created_at: string;
   disabled_at: string | null;
@@ -55,6 +55,14 @@ export type MqttChannelConfig = {
   retain?: boolean | null;
   client_id?: string | null;
   keepalive_seconds?: number | null;
+};
+
+export type GotifyChannelConfig = {
+  server_base_url: string;
+  app_token: string;
+  default_priority?: number | null;
+  default_extras_json?: Record<string, unknown>;
+  default_payload_json?: Record<string, unknown>;
 };
 
 export type Rule = {

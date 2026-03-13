@@ -6,6 +6,7 @@ import { authedFetch } from "@/lib/authed";
 import type {
   BarkChannelConfig,
   Channel,
+  GotifyChannelConfig,
   MqttChannelConfig,
   NtfyChannelConfig,
 } from "@/lib/types";
@@ -14,7 +15,7 @@ type ChannelType = Channel["type"];
 
 type ChannelDetailResp = {
   channel: Channel;
-  config: BarkChannelConfig | NtfyChannelConfig | MqttChannelConfig;
+  config: BarkChannelConfig | NtfyChannelConfig | MqttChannelConfig | GotifyChannelConfig;
 };
 
 type ChannelTestResp = {
@@ -111,6 +112,11 @@ export default function ChannelsPage() {
   const [mqttClientId, setMqttClientId] = useState("");
   const [mqttKeepaliveSeconds, setMqttKeepaliveSeconds] = useState("60");
 
+  const [gotifyServerBaseUrl, setGotifyServerBaseUrl] = useState("");
+  const [gotifyAppToken, setGotifyAppToken] = useState("");
+  const [gotifyDefaultPriority, setGotifyDefaultPriority] = useState("");
+  const [gotifyDefaultExtrasJson, setGotifyDefaultExtrasJson] = useState("{}");
+
   const [testChannelId, setTestChannelId] = useState<string | null>(null);
   const [testTitle, setTestTitle] = useState("Herald test");
   const [testBody, setTestBody] = useState("Test notification from Herald");
@@ -175,6 +181,11 @@ export default function ChannelsPage() {
     setMqttClientId("");
     setMqttKeepaliveSeconds("60");
 
+    setGotifyServerBaseUrl("");
+    setGotifyAppToken("");
+    setGotifyDefaultPriority("");
+    setGotifyDefaultExtrasJson("{}");
+
     setTestChannelId(null);
     setTestTitle("Herald test");
     setTestBody("Test notification from Herald");
@@ -230,7 +241,7 @@ export default function ChannelsPage() {
           setNtfyUsername(user);
           setNtfyPassword(pass);
           setNtfyDefaultHeadersJson(JSON.stringify(cfg.default_headers_json ?? {}, null, 2));
-        } else {
+        } else if (data.channel.type === "mqtt") {
           const cfg = data.config as MqttChannelConfig;
           setMqttBrokerHost(cfg.broker_host ?? "");
           setMqttBrokerPort(String(cfg.broker_port ?? 1883));
@@ -243,6 +254,12 @@ export default function ChannelsPage() {
           setMqttRetain(Boolean(cfg.retain));
           setMqttClientId((cfg.client_id ?? "") || "");
           setMqttKeepaliveSeconds(String(cfg.keepalive_seconds ?? 60));
+        } else if (data.channel.type === "gotify") {
+          const cfg = data.config as GotifyChannelConfig;
+          setGotifyServerBaseUrl(cfg.server_base_url ?? "");
+          setGotifyAppToken(cfg.app_token ?? "");
+          setGotifyDefaultPriority(cfg.default_priority != null ? String(cfg.default_priority) : "");
+          setGotifyDefaultExtrasJson(JSON.stringify(cfg.default_extras_json ?? {}, null, 2));
         }
       } finally {
         setSubmitting(false);
@@ -344,7 +361,7 @@ export default function ChannelsPage() {
           password: ntfyAuthMode === "basic" ? pass : undefined,
           default_headers_json: parsed.value,
         };
-      } else {
+      } else if (channelType === "mqtt") {
         if (!mqttBrokerHost.trim()) {
           setError("Broker host is required.");
           return;
@@ -388,6 +405,34 @@ export default function ChannelsPage() {
           client_id: mqttClientId.trim() || undefined,
           keepalive_seconds: keepalive,
         };
+      } else if (channelType === "gotify") {
+        const baseUrl = gotifyServerBaseUrl.trim();
+        const token = gotifyAppToken.trim();
+        if (!baseUrl) {
+          setError("Server base URL is required.");
+          return;
+        }
+        if (!token) {
+          setError("App token is required.");
+          return;
+        }
+        cfg = { server_base_url: baseUrl, app_token: token } as Record<string, unknown>;
+        const priorityNum = parseInt(gotifyDefaultPriority.trim(), 10);
+        if (!isNaN(priorityNum)) {
+          if (priorityNum < 0 || priorityNum > 10) {
+            setError("Priority must be between 0 and 10.");
+            return;
+          }
+          (cfg as Record<string, unknown>).default_priority = priorityNum;
+        }
+        const extrasResult = parseJsonObject(gotifyDefaultExtrasJson);
+        if (!extrasResult.ok) {
+          setError(`Default extras JSON: ${extrasResult.error}`);
+          return;
+        }
+        if (Object.keys(extrasResult.value).length > 0) {
+          (cfg as Record<string, unknown>).default_extras_json = extrasResult.value;
+        }
       }
 
       const path = editingId ? `/api/channels/${editingId}` : "/api/channels";
@@ -415,6 +460,10 @@ export default function ChannelsPage() {
     barkUseDeviceKeys,
     channelType,
     editingId,
+    gotifyAppToken,
+    gotifyDefaultExtrasJson,
+    gotifyDefaultPriority,
+    gotifyServerBaseUrl,
     load,
     mqttBrokerHost,
     mqttBrokerPort,
@@ -471,7 +520,7 @@ export default function ChannelsPage() {
     <div className="space-y-6">
       <div>
         <div className="text-lg font-semibold tracking-tight">Channels</div>
-        <div className="mt-1 text-sm text-muted-foreground">Bark, ntfy, and MQTT.</div>
+        <div className="mt-1 text-sm text-muted-foreground">Bark, ntfy, MQTT, and Gotify.</div>
       </div>
 
       {error && (
@@ -495,6 +544,7 @@ export default function ChannelsPage() {
               <option value="bark">bark</option>
               <option value="ntfy">ntfy</option>
               <option value="mqtt">mqtt</option>
+              <option value="gotify">gotify</option>
             </select>
           </label>
 
@@ -783,6 +833,66 @@ export default function ChannelsPage() {
                   onChange={(e) => setMqttKeepaliveSeconds(e.target.value)}
                   disabled={!canCreate || submitting}
                 />
+              </label>
+            </>
+          )}
+          {channelType === "gotify" && (
+            <>
+              <label className="block">
+                <div className="text-xs font-medium text-muted-foreground">Server base URL</div>
+                <input
+                  className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                  placeholder="https://gotify.example.com"
+                  value={gotifyServerBaseUrl}
+                  onChange={(e) => setGotifyServerBaseUrl(e.target.value)}
+                  disabled={!canCreate || submitting}
+                />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Your Gotify server URL (e.g., https://gotify.example.com)
+                </div>
+              </label>
+              <label className="block">
+                <div className="text-xs font-medium text-muted-foreground">App token</div>
+                <input
+                  type="password"
+                  className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
+                  placeholder="Apx..."
+                  value={gotifyAppToken}
+                  onChange={(e) => setGotifyAppToken(e.target.value)}
+                  disabled={!canCreate || submitting}
+                />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Application token from Gotify (not client token)
+                </div>
+              </label>
+              <label className="block">
+                <div className="text-xs font-medium text-muted-foreground">Default priority (optional)</div>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                  placeholder="5"
+                  min={0}
+                  max={10}
+                  value={gotifyDefaultPriority}
+                  onChange={(e) => setGotifyDefaultPriority(e.target.value)}
+                  disabled={!canCreate || submitting}
+                />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  0 (min) to 10 (urgent). Leave empty to use message priority.
+                </div>
+              </label>
+              <label className="block md:col-span-2">
+                <div className="text-xs font-medium text-muted-foreground">Default extras JSON (optional)</div>
+                <textarea
+                  className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs"
+                  placeholder='{"client::display": {"contentType": "text/markdown"}}'
+                  value={gotifyDefaultExtrasJson}
+                  onChange={(e) => setGotifyDefaultExtrasJson(e.target.value)}
+                  disabled={!canCreate || submitting}
+                />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  JSON object for markdown, click URLs, etc.
+                </div>
               </label>
             </>
           )}
