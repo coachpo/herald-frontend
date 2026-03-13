@@ -53,7 +53,7 @@ frontend/
 
 - Dashboard home shows quick actions, recent messages, recent failures, and a getting-started list.
 - Messages page provides filters plus batch delete.
-- Channels page supports Bark, ntfy, and MQTT CRUD plus live send-test calls.
+- Channels page supports Bark, ntfy, MQTT, and Gotify CRUD plus live send-test calls.
 - Rules page supports filter editing, payload template JSON, and no-send test previews.
 - Ingest endpoints page shows the key once at creation and provides copyable URL/curl examples.
 
@@ -62,7 +62,7 @@ frontend/
 - Never store auth tokens in `localStorage`.
 - Never hardcode secrets into frontend code or config.
 - Never render ingested payloads as HTML.
-- Never assume `react-hook-form` or `zod` are the active pattern unless the code actually changes.
+- Never assume a form helper library is the active pattern unless the code actually changes.
 
 ## Verification
 

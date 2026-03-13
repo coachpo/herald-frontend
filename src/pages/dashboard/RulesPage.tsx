@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { readApiError, readJson } from "@/lib/api";
@@ -6,19 +5,10 @@ import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 import type { Channel, IngestEndpoint, Rule } from "@/lib/types";
 
-function parseJsonObject(text: string): { ok: true; value: Record<string, unknown> } | { ok: false; error: string } {
-  const trimmed = text.trim();
-  if (!trimmed) return { ok: false, error: "JSON is required." };
-  try {
-    const v = JSON.parse(trimmed) as unknown;
-    if (!v || typeof v !== "object" || Array.isArray(v)) {
-      return { ok: false, error: "JSON must be an object." };
-    }
-    return { ok: true, value: v as Record<string, unknown> };
-  } catch {
-    return { ok: false, error: "Invalid JSON." };
-  }
-}
+import { RuleCreateCard } from "./rules/RuleCreateCard";
+import { RulesListCard } from "./rules/RulesListCard";
+import { RuleTesterCard } from "./rules/RuleTesterCard";
+import { parseJsonObject, type RuleTestResult } from "./rules/utils";
 
 export default function RulesPage() {
   const auth = useAuth();
@@ -46,16 +36,7 @@ export default function RulesPage() {
   const [testPayloadJson, setTestPayloadJson] = useState('{\n  "title": "Rule test",\n  "body": "Hello from rule test",\n  "group": "deploys",\n  "priority": 3,\n  "tags": ["test"],\n  "url": "https://example.com",\n  "extras": {\n    "source": "ui"\n  }\n}');
   const [testLoading, setTestLoading] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{
-    matched_count: number;
-    total_rules: number;
-    matches: Array<{
-      rule: Rule;
-      channel: Channel;
-      channel_type: string;
-      rendered_payload: unknown;
-    }>;
-  } | null>(null);
+  const [testResult, setTestResult] = useState<RuleTestResult | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -178,6 +159,145 @@ export default function RulesPage() {
     return { ok: true as const, error: "", payload: parsed.value };
   }, [testPayloadJson]);
 
+  const createRule = useCallback(async () => {
+    setError(null);
+
+    if (!regexValidation.ok) {
+      setError(`Payload regex is invalid: ${regexValidation.error}`);
+      return;
+    }
+
+    if (!priorityValidation.ok) {
+      setError(priorityValidation.error);
+      return;
+    }
+
+    const parsedPayload = parseJsonObject(payloadJson);
+    if (!parsedPayload.ok) {
+      setError(`Payload template: ${parsedPayload.error}`);
+      return;
+    }
+    const payload = parsedPayload.value;
+    const contains = containsLines
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const filter: Record<string, unknown> = {};
+    if (endpointIds.length) filter.ingest_endpoint_ids = endpointIds;
+    if (contains.length || regex.trim()) {
+      filter.body = {
+        contains: contains.length ? contains : undefined,
+        regex: regex.trim() || undefined,
+      };
+    }
+
+    const minPriority = priorityMin.trim() ? Number(priorityMin) : null;
+    const maxPriority = priorityMax.trim() ? Number(priorityMax) : null;
+    if (minPriority !== null || maxPriority !== null) {
+      filter.priority = {
+        min: minPriority ?? undefined,
+        max: maxPriority ?? undefined,
+      };
+    }
+
+    const tags = tagsCsv
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (tags.length) {
+      filter.tags = tags;
+    }
+
+    if (groupExact.trim()) {
+      filter.group = groupExact.trim();
+    }
+
+    const res = await authedFetch(auth, "/api/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        enabled,
+        channel_id: channelId,
+        filter,
+        payload_template: payload,
+      }),
+    });
+    if (!res.ok) {
+      const err = await readApiError(res);
+      setError(err.message);
+      return;
+    }
+    setName("");
+    setEndpointIds([]);
+    setContainsLines("");
+    setRegex("");
+    setPriorityMin("");
+    setPriorityMax("");
+    setTagsCsv("");
+    setGroupExact("");
+    void load();
+  }, [
+    auth,
+    channelId,
+    containsLines,
+    enabled,
+    endpointIds,
+    groupExact,
+    load,
+    name,
+    payloadJson,
+    priorityMax,
+    priorityMin,
+    priorityValidation,
+    regex,
+    regexValidation,
+    tagsCsv,
+  ]);
+
+  const runRuleTest = useCallback(async () => {
+    setTestError(null);
+    setTestResult(null);
+    setTestLoading(true);
+    try {
+      if (!testPayloadValidation.ok || !testPayloadValidation.payload) {
+        setTestError(testPayloadValidation.error);
+        return;
+      }
+      const res = await authedFetch(auth, "/api/rules/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ingest_endpoint_id: testEndpointId,
+          payload: testPayloadValidation.payload,
+        }),
+      });
+      if (!res.ok) {
+        setTestError((await readApiError(res)).message);
+        return;
+      }
+      const data = await readJson<RuleTestResult>(res);
+      setTestResult(data);
+    } finally {
+      setTestLoading(false);
+    }
+  }, [auth, testEndpointId, testPayloadValidation]);
+
+  const deleteRule = useCallback(
+    async (id: string) => {
+      if (!confirm("Delete this rule?")) return;
+      const res = await authedFetch(auth, `/api/rules/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setError((await readApiError(res)).message);
+        return;
+      }
+      void load();
+    },
+    [auth, load],
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -191,449 +311,63 @@ export default function RulesPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="text-sm font-semibold">Create rule</div>
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Name</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={!canCreate}
-            />
-          </label>
-          <label className="flex items-end gap-2">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              disabled={!canCreate}
-            />
-            <span className="text-sm text-muted-foreground">Enabled</span>
-          </label>
+      <RuleCreateCard
+        canCreate={canCreate}
+        channels={channels}
+        endpoints={endpoints}
+        name={name}
+        setName={setName}
+        enabled={enabled}
+        setEnabled={setEnabled}
+        channelId={channelId}
+        setChannelId={setChannelId}
+        endpointIds={endpointIds}
+        setEndpointIds={setEndpointIds}
+        containsLines={containsLines}
+        setContainsLines={setContainsLines}
+        regex={regex}
+        setRegex={setRegex}
+        priorityMin={priorityMin}
+        setPriorityMin={setPriorityMin}
+        priorityMax={priorityMax}
+        setPriorityMax={setPriorityMax}
+        tagsCsv={tagsCsv}
+        setTagsCsv={setTagsCsv}
+        groupExact={groupExact}
+        setGroupExact={setGroupExact}
+        payloadJson={payloadJson}
+        setPayloadJson={setPayloadJson}
+        payloadLabel={payloadLabel}
+        regexValidation={regexValidation}
+        priorityValidation={priorityValidation}
+        onCreate={() => void createRule()}
+      />
 
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Channel</div>
-            <select
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={channelId}
-              onChange={(e) => setChannelId(e.target.value)}
-              disabled={!canCreate}
-            >
-              {channels.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.type})
-                </option>
-              ))}
-            </select>
-          </label>
+      <RuleTesterCard
+        canCreate={canCreate}
+        endpoints={endpoints}
+        testEndpointId={testEndpointId}
+        setTestEndpointId={setTestEndpointId}
+        testPayloadJson={testPayloadJson}
+        setTestPayloadJson={setTestPayloadJson}
+        testLoading={testLoading}
+        testError={testError}
+        testResult={testResult}
+        testPayloadValidation={testPayloadValidation}
+        onRun={() => void runRuleTest()}
+        onClear={() => {
+          setTestError(null);
+          setTestResult(null);
+        }}
+      />
 
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Ingest endpoints (optional)</div>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {endpoints.map((ep) => {
-                const on = endpointIds.includes(ep.id);
-                return (
-                  <button
-                    key={ep.id}
-                    type="button"
-                    disabled={!canCreate}
-                    className={
-                      "rounded-full border px-3 py-1 text-xs font-medium " +
-                      (on
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:bg-muted")
-                    }
-                    onClick={() => {
-                      setEndpointIds((prev) =>
-                        prev.includes(ep.id)
-                          ? prev.filter((x) => x !== ep.id)
-                          : [...prev, ep.id],
-                      );
-                    }}
-                  >
-                    {ep.name}
-                  </button>
-                );
-              })}
-            </div>
-          </label>
-
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Payload contains (one per line)</div>
-            <textarea
-              className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={containsLines}
-              onChange={(e) => setContainsLines(e.target.value)}
-              disabled={!canCreate}
-            />
-          </label>
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Payload regex (optional)</div>
-            <input
-              className={
-                "mt-1 w-full rounded-xl border bg-card px-3 py-2 text-sm font-mono " +
-                (regexValidation.ok ? "border-border" : "border-destructive/40")
-              }
-              value={regex}
-              onChange={(e) => setRegex(e.target.value)}
-              disabled={!canCreate}
-            />
-            {!regexValidation.ok && (
-              <div className="mt-1 text-xs text-destructive">Invalid regex: {regexValidation.error}</div>
-            )}
-          </label>
-
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Priority min (optional)</div>
-            <select
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={priorityMin}
-              onChange={(e) => setPriorityMin(e.target.value)}
-              disabled={!canCreate}
-            >
-              <option value="">Any</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
-          </label>
-
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Priority max (optional)</div>
-            <select
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={priorityMax}
-              onChange={(e) => setPriorityMax(e.target.value)}
-              disabled={!canCreate}
-            >
-              <option value="">Any</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
-          </label>
-
-          <label className="block md:col-span-2">
-            <div className="text-xs font-medium text-muted-foreground">Tags (comma-separated, optional)</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={tagsCsv}
-              onChange={(e) => setTagsCsv(e.target.value)}
-              placeholder="deploy,production"
-              disabled={!canCreate}
-            />
-          </label>
-
-          <label className="block md:col-span-2">
-            <div className="text-xs font-medium text-muted-foreground">Group exact match (optional)</div>
-            <input
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={groupExact}
-              onChange={(e) => setGroupExact(e.target.value)}
-              placeholder="deploys"
-              disabled={!canCreate}
-            />
-          </label>
-        </div>
-
-        {!priorityValidation.ok && (
-          <div className="mt-2 text-xs text-destructive">{priorityValidation.error}</div>
-        )}
-
-        <div className="mt-4">
-          <div className="text-xs font-medium text-muted-foreground">{payloadLabel}</div>
-          <textarea
-            className="mt-1 h-48 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs"
-            value={payloadJson}
-            onChange={(e) => setPayloadJson(e.target.value)}
-            disabled={!canCreate}
-          />
-          <div className="mt-2 text-xs text-muted-foreground">
-            Available vars: {"{{message.title}}"}, {"{{message.body}}"}, {"{{message.group}}"},
-            {" {{message.priority}}"}, {"{{message.tags}}"}, {"{{message.url}}"},
-            {" {{message.id}}"}, {"{{message.received_at}}"}, {"{{message.extras.<key>}}"},
-            {" {{request.content_type}}"}, {"{{request.remote_ip}}"}, {"{{request.user_agent}}"},
-            {" {{request.headers.<name>}}"}, {"{{request.query.<name>}}"},
-            {" {{ingest_endpoint.id}}"}, {"{{ingest_endpoint.name}}"}.
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <button
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || !name.trim() || !channelId || !regexValidation.ok || !priorityValidation.ok}
-            onClick={async () => {
-              setError(null);
-
-              if (!regexValidation.ok) {
-                setError(`Payload regex is invalid: ${regexValidation.error}`);
-                return;
-              }
-
-              if (!priorityValidation.ok) {
-                setError(priorityValidation.error);
-                return;
-              }
-
-              const parsedPayload = parseJsonObject(payloadJson);
-              if (!parsedPayload.ok) {
-                setError(`Payload template: ${parsedPayload.error}`);
-                return;
-              }
-              const payload = parsedPayload.value;
-              const contains = containsLines
-                .split("\n")
-                .map((s) => s.trim())
-                .filter(Boolean);
-              const filter: Record<string, unknown> = {};
-              if (endpointIds.length) filter.ingest_endpoint_ids = endpointIds;
-              if (contains.length || regex.trim()) {
-                filter.body = {
-                  contains: contains.length ? contains : undefined,
-                  regex: regex.trim() || undefined,
-                };
-              }
-
-              const minPriority = priorityMin.trim() ? Number(priorityMin) : null;
-              const maxPriority = priorityMax.trim() ? Number(priorityMax) : null;
-              if (minPriority !== null || maxPriority !== null) {
-                filter.priority = {
-                  min: minPriority ?? undefined,
-                  max: maxPriority ?? undefined,
-                };
-              }
-
-              const tags = tagsCsv
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
-              if (tags.length) {
-                filter.tags = tags;
-              }
-
-              if (groupExact.trim()) {
-                filter.group = groupExact.trim();
-              }
-
-              const res = await authedFetch(auth, "/api/rules", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  name,
-                  enabled,
-                  channel_id: channelId,
-                  filter,
-                  payload_template: payload,
-                }),
-              });
-              if (!res.ok) {
-                const err = await readApiError(res);
-                setError(err.message);
-                return;
-              }
-              setName("");
-              setEndpointIds([]);
-              setContainsLines("");
-              setRegex("");
-              setPriorityMin("");
-              setPriorityMax("");
-              setTagsCsv("");
-              setGroupExact("");
-              void load();
-            }}
-          >
-            Create
-          </button>
-          {!canCreate && (
-            <div className="mt-2 text-xs text-warning">Verify your email to create rules.</div>
-          )}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="text-sm font-semibold">Rule tester</div>
-        <div className="mt-1 text-sm text-muted-foreground">
-          Provide a sample message; Herald will show which rules would trigger.
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground">Ingest endpoint</div>
-            <select
-              className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
-              value={testEndpointId}
-              onChange={(e) => setTestEndpointId(e.target.value)}
-              disabled={!canCreate || testLoading || endpoints.length === 0}
-            >
-              {endpoints.map((ep) => (
-                <option key={ep.id} value={ep.id}>
-                  {ep.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <label className="mt-3 block">
-          <div className="text-xs font-medium text-muted-foreground">Sample payload JSON</div>
-          <textarea
-            className={
-              "mt-1 h-40 w-full resize-y rounded-xl border bg-card px-3 py-2 text-sm font-mono " +
-              (testPayloadValidation.ok ? "border-border" : "border-destructive/40")
-            }
-            value={testPayloadJson}
-            onChange={(e) => setTestPayloadJson(e.target.value)}
-            disabled={!canCreate || testLoading}
-          />
-          {!testPayloadValidation.ok && (
-            <div className="mt-1 text-xs text-destructive">{testPayloadValidation.error}</div>
-          )}
-        </label>
-
-        <div className="mt-3 flex items-center gap-2">
-          <button
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || !testEndpointId || testLoading || !testPayloadValidation.ok}
-            onClick={async () => {
-              setTestError(null);
-              setTestResult(null);
-              setTestLoading(true);
-              try {
-                if (!testPayloadValidation.ok || !testPayloadValidation.payload) {
-                  setTestError(testPayloadValidation.error);
-                  return;
-                }
-                const res = await authedFetch(auth, "/api/rules/test", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    ingest_endpoint_id: testEndpointId,
-                    payload: testPayloadValidation.payload,
-                  }),
-                });
-                if (!res.ok) {
-                  setTestError((await readApiError(res)).message);
-                  return;
-                }
-                const data = await readJson<{
-                  matched_count: number;
-                  total_rules: number;
-                  matches: Array<{
-                    rule: Rule;
-                    channel: Channel;
-                    channel_type: string;
-                    rendered_payload: unknown;
-                  }>;
-                }>(res);
-                setTestResult(data);
-              } finally {
-                setTestLoading(false);
-              }
-            }}
-          >
-            {testLoading ? "Testing..." : "Find triggered rules"}
-          </button>
-          <button
-            className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted"
-            type="button"
-            onClick={() => {
-              setTestError(null);
-              setTestResult(null);
-            }}
-          >
-            Clear
-          </button>
-        </div>
-
-        {testError && (
-          <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
-            {testError}
-          </div>
-        )}
-
-        {testResult && (
-          <div className="mt-3 space-y-3">
-            <div className="text-xs text-muted-foreground">
-              Matched {testResult.matched_count} of {testResult.total_rules} enabled rule(s)
-            </div>
-            {testResult.matches.length === 0 ? (
-              <div className="rounded-xl border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                No rules would trigger for this sample.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {testResult.matches.map((m) => (
-                  <div key={m.rule.id} className="rounded-xl border border-border bg-card p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-foreground">{m.rule.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {m.channel.name} ({m.channel_type})
-                      </div>
-                    </div>
-                    <pre className="mt-2 overflow-auto rounded-xl border border-border bg-muted p-3 text-xs">
-                      {JSON.stringify(m.rendered_payload, null, 2)}
-                    </pre>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {!canCreate && (
-          <div className="mt-2 text-xs text-warning">Verify your email to run tests.</div>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card">
-        <div className="border-b border-border px-4 py-3 text-sm font-semibold">Rules</div>
-        {loading ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">Loading...</div>
-        ) : sortedRules.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">No rules yet.</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {sortedRules.map((r) => (
-              <div key={r.id} className="px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-foreground">{r.name}</div>
-                  <div className="flex items-center gap-3">
-                    <div className={"text-xs font-medium " + (r.enabled ? "text-success" : "text-muted-foreground")}>
-                      {r.enabled ? "enabled" : "disabled"}
-                    </div>
-                    <button
-                      className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-                      disabled={!canCreate}
-                      onClick={async () => {
-                        if (!confirm("Delete this rule?")) return;
-                        const res = await authedFetch(auth, `/api/rules/${r.id}`, {
-                          method: "DELETE",
-                        });
-                        if (!res.ok) {
-                          setError((await readApiError(res)).message);
-                          return;
-                        }
-                        void load();
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Channel: {channelNameById.get(r.channel_id) ?? r.channel_id}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <RulesListCard
+        loading={loading}
+        rules={sortedRules}
+        canCreate={canCreate}
+        channelNameById={channelNameById}
+        onDelete={(id) => void deleteRule(id)}
+      />
     </div>
   );
 }
