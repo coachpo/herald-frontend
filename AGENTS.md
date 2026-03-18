@@ -11,6 +11,7 @@ pnpm install
 pnpm lint
 pnpm build
 pnpm dev
+pnpm preview
 ```
 
 ## Structure
@@ -46,25 +47,27 @@ frontend/
 - `apiFetch()` injects `Authorization` and always uses `credentials: "omit"`.
 - `authedFetch()` retries once after a successful refresh on `401`.
 - `buildPublicApiUrl()` preserves localhost HTTP, upgrades non-localhost HTTP to HTTPS, and `buildIngestUrl()` converts UUIDs to hex for ingest URLs.
-- `vite.config.ts` still proxies `/api`, `/health`, and `/admin` to `http://localhost:8000`, but `start.sh full` normally relies on direct `VITE_API_URL=http://localhost:$BACKEND_PORT`.
+- `pnpm dev` uses Vite port `3000`; `deploy/server.mjs` serves `dist/` on `3100`; `start.sh full` typically overrides Vite to `35173` and points `VITE_API_URL` at the helper backend port.
 - Forms use `useState` plus manual validation; there is no active frontend test runner.
 - Theme preference uses `localStorage` key `herald_theme` and `<html data-theme>`.
+- Forgot/reset/verify pages assume tokens arrive out of band; the current backend does not implement repo-local email delivery.
 
 ## UI Notes
 
-- Dashboard home shows quick actions, recent messages, recent failures, and a getting-started list.
-- Messages page provides filters plus batch delete.
-- Channels page supports Bark, ntfy, MQTT, and Gotify CRUD plus live send-test calls.
-- Rules page supports filter editing, payload template JSON, and no-send test previews.
-- Ingest endpoints page shows the key once at creation and provides copyable URL/curl examples.
-- `deploy/server.mjs` serves `dist/` on port `3100`, exposes `GET /health`, applies immutable caching to static assets, and falls back to `index.html` for SPA routes.
+- Dashboard home shows quick actions, recent messages, recent failures, a getting-started list, and an unverified-email warning banner.
+- Messages page exposes search, group, and tag inputs, but the current backend only honors endpoint, priority, and time-range query params; batch delete also supports optional `ingest_endpoint_id`.
+- Channels page supports create/delete for Bark, ntfy, MQTT, and Gotify plus live send-test calls.
+- An edit form exists, but the current summary-only `GET /api/channels/{id}` response does not return config, so edit hydration is not aligned end-to-end.
+- Rules page supports create, preview/test, list, and delete; the backend has read/update APIs, but the UI does not expose edit flows.
+- Ingest endpoints page shows the key once at creation and provides copyable URL/curl examples; the backend has detail/rename routes, but the current UI only exposes create/list/revoke/archive.
+- Account page handles resend verification requests, change email, change password, and delete account.
 
 ## Security (Do Not)
 
 - Never store auth tokens in `localStorage`.
 - Never hardcode secrets into frontend code or config.
 - Never render ingested payloads as HTML.
-- Never assume a form helper library is the active pattern unless the code actually changes.
+- Never assume visible filter controls or auth pages imply backend support; confirm the corresponding API route behavior before updating docs.
 
 ## Verification
 
