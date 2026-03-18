@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useState } from "react";
 
-import { apiFetch, readApiError } from "@/lib/api";
+import { apiFetch, readApiError, readRequestError } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,25 +44,30 @@ export default function SignupPage() {
 
             <form
               className="space-y-3"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setBusy(true);
-              setError(null);
-              setMessage(null);
-              const res = await apiFetch("/api/auth/signup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-              });
-              setBusy(false);
-              if (!res.ok) {
-                const err = await readApiError(res);
-                setError(err.message);
-                return;
-              }
-              setMessage("Check your email for a verification link.");
-            }}
-          >
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setBusy(true);
+                setError(null);
+                setMessage(null);
+                try {
+                  const res = await apiFetch("/api/auth/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password }),
+                  });
+                  if (!res.ok) {
+                    const err = await readApiError(res);
+                    setError(err.message);
+                    return;
+                  }
+                  setMessage("Check your email for a verification link.");
+                } catch (error) {
+                  setError(readRequestError(error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
             <div className="space-y-2">
               <Label htmlFor="signup-email">Email</Label>
               <Input

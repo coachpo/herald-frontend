@@ -70,6 +70,9 @@ export function RuleCreateCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Name</div>
           <input
+            id="rule-name"
+            name="name"
+            autoComplete="off"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -78,6 +81,8 @@ export function RuleCreateCard({
         </label>
         <label className="flex items-end gap-2">
           <input
+            id="rule-enabled"
+            name="enabled"
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
@@ -89,6 +94,8 @@ export function RuleCreateCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Channel</div>
           <select
+            id="rule-channel"
+            name="channel_id"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={channelId}
             onChange={(e) => setChannelId(e.target.value)}
@@ -136,6 +143,8 @@ export function RuleCreateCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Payload contains (one per line)</div>
           <textarea
+            id="rule-body-contains"
+            name="body_contains"
             className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={containsLines}
             onChange={(e) => setContainsLines(e.target.value)}
@@ -145,6 +154,9 @@ export function RuleCreateCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Payload regex (optional)</div>
           <input
+            id="rule-body-regex"
+            name="body_regex"
+            autoComplete="off"
             className={
               "mt-1 w-full rounded-xl border bg-card px-3 py-2 text-sm font-mono " +
               (regexValidation.ok ? "border-border" : "border-destructive/40")
@@ -161,6 +173,8 @@ export function RuleCreateCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Priority min (optional)</div>
           <select
+            id="rule-priority-min"
+            name="priority_min"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={priorityMin}
             onChange={(e) => setPriorityMin(e.target.value)}
@@ -178,6 +192,8 @@ export function RuleCreateCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Priority max (optional)</div>
           <select
+            id="rule-priority-max"
+            name="priority_max"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={priorityMax}
             onChange={(e) => setPriorityMax(e.target.value)}
@@ -195,6 +211,9 @@ export function RuleCreateCard({
         <label className="block md:col-span-2">
           <div className="text-xs font-medium text-muted-foreground">Tags (comma-separated, optional)</div>
           <input
+            id="rule-tags"
+            name="tags"
+            autoComplete="off"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={tagsCsv}
             onChange={(e) => setTagsCsv(e.target.value)}
@@ -206,6 +225,9 @@ export function RuleCreateCard({
         <label className="block md:col-span-2">
           <div className="text-xs font-medium text-muted-foreground">Group exact match (optional)</div>
           <input
+            id="rule-group"
+            name="group"
+            autoComplete="off"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={groupExact}
             onChange={(e) => setGroupExact(e.target.value)}
@@ -222,6 +244,8 @@ export function RuleCreateCard({
       <div className="mt-4">
         <div className="text-xs font-medium text-muted-foreground">{payloadLabel}</div>
         <textarea
+          id="rule-payload-template"
+          name="payload_template"
           className="mt-1 h-48 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs"
           value={payloadJson}
           onChange={(e) => setPayloadJson(e.target.value)}

@@ -114,6 +114,8 @@ export function ChannelEditorCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Type</div>
           <select
+            id="channel-type"
+            name="type"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={form.channelType}
             onChange={(e) => form.setChannelType(e.target.value as ChannelType)}
@@ -129,6 +131,9 @@ export function ChannelEditorCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Name</div>
           <input
+            id="channel-name"
+            name="name"
+            autoComplete="off"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={form.name}
             onChange={(e) => form.setName(e.target.value)}

@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useEffect, useState } from "react";
 
-import { apiFetch, readApiError } from "@/lib/api";
+import { apiFetch, readApiError, readRequestError } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,18 +27,23 @@ export function VerifyEmailClient({ token }: { token: string | null }) {
   useEffect(() => {
     if (!resolvedToken) return;
     (async () => {
-      const res = await apiFetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: resolvedToken }),
-      });
-      if (!res.ok) {
-        const err = await readApiError(res);
+      try {
+        const res = await apiFetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: resolvedToken }),
+        });
+        if (!res.ok) {
+          const err = await readApiError(res);
+          setStatus("err");
+          setError(err.message);
+          return;
+        }
+        setStatus("ok");
+      } catch (error) {
         setStatus("err");
-        setError(err.message);
-        return;
+        setError(readRequestError(error).message);
       }
-      setStatus("ok");
     })();
   }, [resolvedToken]);
 

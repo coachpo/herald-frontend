@@ -56,6 +56,9 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Broker host</div>
         <input
+          id="mqtt-broker-host"
+          name="broker_host"
+          autoComplete="off"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           placeholder="mqtt.example.com"
           value={brokerHost}
@@ -66,6 +69,8 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Broker port</div>
         <input
+          id="mqtt-broker-port"
+          name="broker_port"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
           type="number"
           min={1}
@@ -78,6 +83,9 @@ export function MqttChannelForm({
       <label className="block md:col-span-2">
         <div className="text-xs font-medium text-muted-foreground">Topic</div>
         <input
+          id="mqtt-topic"
+          name="topic"
+          autoComplete="off"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
           placeholder="herald/messages"
           value={topic}
@@ -89,6 +97,9 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Username (optional)</div>
         <input
+          id="mqtt-username"
+          name="username"
+          autoComplete="off"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -98,6 +109,9 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Password (optional)</div>
         <input
+          id="mqtt-password"
+          name="password"
+          autoComplete="off"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           type="password"
           value={password}
@@ -108,6 +122,8 @@ export function MqttChannelForm({
 
       <label className="flex items-end gap-2">
         <input
+          id="mqtt-tls"
+          name="tls"
           type="checkbox"
           checked={tls}
           onChange={(e) => setTls(e.target.checked)}
@@ -117,6 +133,8 @@ export function MqttChannelForm({
       </label>
       <label className="flex items-end gap-2">
         <input
+          id="mqtt-tls-insecure"
+          name="tls_insecure"
           type="checkbox"
           checked={tlsInsecure}
           onChange={(e) => setTlsInsecure(e.target.checked)}
@@ -128,6 +146,8 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">QoS</div>
         <select
+          id="mqtt-qos"
+          name="qos"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           value={qos}
           onChange={(e) => setQos(e.target.value)}
@@ -140,6 +160,8 @@ export function MqttChannelForm({
       </label>
       <label className="flex items-end gap-2">
         <input
+          id="mqtt-retain"
+          name="retain"
           type="checkbox"
           checked={retain}
           onChange={(e) => setRetain(e.target.checked)}
@@ -151,6 +173,9 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Client id (optional)</div>
         <input
+          id="mqtt-client-id"
+          name="client_id"
+          autoComplete="off"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
@@ -160,6 +185,8 @@ export function MqttChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Keepalive (seconds)</div>
         <input
+          id="mqtt-keepalive-seconds"
+          name="keepalive_seconds"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
           type="number"
           min={1}

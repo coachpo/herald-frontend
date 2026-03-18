@@ -42,6 +42,8 @@ export function RuleTesterCard({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Ingest endpoint</div>
           <select
+            id="rule-test-endpoint"
+            name="ingest_endpoint_id"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={testEndpointId}
             onChange={(e) => setTestEndpointId(e.target.value)}
@@ -59,6 +61,8 @@ export function RuleTesterCard({
       <label className="mt-3 block">
         <div className="text-xs font-medium text-muted-foreground">Sample payload JSON</div>
         <textarea
+          id="rule-test-payload"
+          name="payload_json"
           className={
             "mt-1 h-40 w-full resize-y rounded-xl border bg-card px-3 py-2 text-sm font-mono " +
             (testPayloadValidation.ok ? "border-border" : "border-destructive/40")

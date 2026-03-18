@@ -30,6 +30,9 @@ export function GotifyChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Server base URL</div>
         <input
+          id="gotify-server-base-url"
+          name="server_base_url"
+          autoComplete="url"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           placeholder="https://gotify.example.com"
           value={serverBaseUrl}
@@ -43,6 +46,9 @@ export function GotifyChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">App token</div>
         <input
+          id="gotify-app-token"
+          name="app_token"
+          autoComplete="off"
           type="password"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
           placeholder="Apx..."
@@ -57,6 +63,8 @@ export function GotifyChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Default priority (optional)</div>
         <input
+          id="gotify-default-priority"
+          name="default_priority"
           type="number"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           placeholder="5"
@@ -73,6 +81,8 @@ export function GotifyChannelForm({
       <label className="block md:col-span-2">
         <div className="text-xs font-medium text-muted-foreground">Default extras JSON (optional)</div>
         <textarea
+          id="gotify-default-extras-json"
+          name="default_extras_json"
           className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs"
           placeholder='{"client::display": {"contentType": "text/markdown"}}'
           value={defaultExtrasJson}

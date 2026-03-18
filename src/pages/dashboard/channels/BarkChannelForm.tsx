@@ -67,6 +67,9 @@ export function BarkChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Server base URL</div>
         <input
+          id="bark-server-base-url"
+          name="server_base_url"
+          autoComplete="url"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           placeholder="https://bark.example.com (or paste https://bark.example.com/<device_key>/)"
           value={serverBaseUrl}
@@ -88,6 +91,8 @@ export function BarkChannelForm({
       </label>
       <label className="flex items-end gap-2">
         <input
+          id="bark-multiple-devices"
+          name="multiple_devices"
           type="checkbox"
           checked={useDeviceKeys}
           onChange={(e) => {
@@ -106,6 +111,8 @@ export function BarkChannelForm({
           <div className="text-xs font-medium text-muted-foreground">Device keys</div>
           <div className="mt-1 text-[10px] text-muted-foreground">One per line</div>
           <textarea
+            id="bark-device-keys"
+            name="device_keys"
             className="mt-1 h-20 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
             value={deviceKeysText}
             onChange={(e) => setDeviceKeysText(e.target.value)}
@@ -116,6 +123,9 @@ export function BarkChannelForm({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Device key</div>
           <input
+            id="bark-device-key"
+            name="device_key"
+            autoComplete="off"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
             value={deviceKey}
             onChange={(e) => setDeviceKey(e.target.value)}
@@ -126,6 +136,8 @@ export function BarkChannelForm({
       <label className="block md:col-span-2">
         <div className="text-xs font-medium text-muted-foreground">Default payload JSON</div>
         <textarea
+          id="bark-default-payload-json"
+          name="default_payload_json"
           className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs"
           value={defaultPayloadJson}
           onChange={(e) => setDefaultPayloadJson(e.target.value)}

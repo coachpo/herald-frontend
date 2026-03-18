@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 
-import { apiFetch, readApiError, readJson } from "@/lib/api";
+import { apiFetch, readApiError, readJson, readRequestError } from "@/lib/api";
 import type { ApiError, User } from "@/lib/types";
 
 type AuthState = {
@@ -95,22 +95,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         s.accessToken === null && s.user === null ? { ...s, loading: true } : s,
       );
 
-      const res = await apiFetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: currentRefresh }),
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          setTokens({ accessToken: null, refreshToken: null, user: null });
-        } else {
-          setState((s) => ({ ...s, loading: false }));
+      try {
+        const res = await apiFetch("/api/auth/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: currentRefresh }),
+        });
+        if (!res.ok) {
+          if (res.status === 401) {
+            setTokens({ accessToken: null, refreshToken: null, user: null });
+          } else {
+            setState((s) => ({ ...s, loading: false }));
+          }
+          return null;
         }
+
+        const data = await readJson<{ access_token: string; refresh_token: string; user: User }>(res);
+        setTokens({ accessToken: data.access_token, refreshToken: data.refresh_token, user: data.user });
+        return data.access_token;
+      } catch {
+        setState((s) => ({ ...s, loading: false }));
         return null;
       }
-      const data = await readJson<{ access_token: string; refresh_token: string; user: User }>(res);
-      setTokens({ accessToken: data.access_token, refreshToken: data.refresh_token, user: data.user });
-      return data.access_token;
     })();
 
     refreshInFlightRef.current = p;
@@ -122,29 +128,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setTokens]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await apiFetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      return await readApiError(res);
+    try {
+      const res = await apiFetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        return await readApiError(res);
+      }
+      const data = await readJson<{ access_token: string; refresh_token: string; user: User }>(res);
+      setTokens({ accessToken: data.access_token, refreshToken: data.refresh_token, user: data.user });
+      return null;
+    } catch (error) {
+      return readRequestError(error);
     }
-    const data = await readJson<{ access_token: string; refresh_token: string; user: User }>(res);
-    setTokens({ accessToken: data.access_token, refreshToken: data.refresh_token, user: data.user });
-    return null;
   }, [setTokens]);
 
   const logout = useCallback(async () => {
     const refreshToken = refreshTokenRef.current;
-    if (refreshToken) {
-      await apiFetch("/api/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
+    try {
+      if (refreshToken) {
+        await apiFetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      }
+    } finally {
+      setTokens({ accessToken: null, refreshToken: null, user: null });
     }
-    setTokens({ accessToken: null, refreshToken: null, user: null });
   }, [setTokens]);
 
   useEffect(() => {

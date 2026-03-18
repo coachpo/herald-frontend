@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useState, useEffect } from "react";
 
-import { apiFetch, readApiError } from "@/lib/api";
+import { apiFetch, readApiError, readRequestError } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,25 +60,32 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
                 setBusy(true);
                 setError(null);
                 setMessage(null);
-                const res = await apiFetch("/api/auth/reset-password", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ token: resolvedToken, new_password: password }),
-                });
-                setBusy(false);
-                if (!res.ok) {
-                  const err = await readApiError(res);
-                  setError(err.message);
-                  return;
+                try {
+                  const res = await apiFetch("/api/auth/reset-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: resolvedToken, new_password: password }),
+                  });
+                  if (!res.ok) {
+                    const err = await readApiError(res);
+                    setError(err.message);
+                    return;
+                  }
+                  setMessage("Password updated. You can log in now.");
+                } catch (error) {
+                  setError(readRequestError(error).message);
+                } finally {
+                  setBusy(false);
                 }
-                setMessage("Password updated. You can log in now.");
               }}
             >
               <div className="space-y-2">
                 <Label htmlFor="reset-password">New password</Label>
                 <Input
                   id="reset-password"
+                  name="new_password"
                   type="password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   minLength={8}

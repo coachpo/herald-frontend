@@ -42,6 +42,9 @@ export function NtfyChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Server base URL</div>
         <input
+          id="ntfy-server-base-url"
+          name="server_base_url"
+          autoComplete="url"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           placeholder="https://ntfy.sh"
           value={serverBaseUrl}
@@ -52,6 +55,9 @@ export function NtfyChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Topic</div>
         <input
+          id="ntfy-topic"
+          name="topic"
+          autoComplete="off"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
           placeholder="mytopic"
           value={topic}
@@ -63,6 +69,8 @@ export function NtfyChannelForm({
       <label className="block">
         <div className="text-xs font-medium text-muted-foreground">Auth</div>
         <select
+          id="ntfy-auth-mode"
+          name="auth_mode"
           className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
           value={authMode}
           onChange={(e) => setAuthMode(e.target.value as "none" | "bearer" | "basic")}
@@ -78,6 +86,9 @@ export function NtfyChannelForm({
         <label className="block">
           <div className="text-xs font-medium text-muted-foreground">Access token</div>
           <input
+            id="ntfy-access-token"
+            name="access_token"
+            autoComplete="off"
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-mono"
             value={accessToken}
             onChange={(e) => setAccessToken(e.target.value)}
@@ -91,6 +102,9 @@ export function NtfyChannelForm({
           <label className="block">
             <div className="text-xs font-medium text-muted-foreground">Username</div>
             <input
+              id="ntfy-username"
+              name="username"
+              autoComplete="off"
               className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -100,6 +114,9 @@ export function NtfyChannelForm({
           <label className="block">
             <div className="text-xs font-medium text-muted-foreground">Password</div>
             <input
+              id="ntfy-password"
+              name="password"
+              autoComplete="off"
               className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
               type="password"
               value={password}
@@ -113,6 +130,8 @@ export function NtfyChannelForm({
       <label className="block md:col-span-2">
         <div className="text-xs font-medium text-muted-foreground">Default headers JSON</div>
         <textarea
+          id="ntfy-default-headers-json"
+          name="default_headers_json"
           className="mt-1 h-24 w-full resize-y rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs"
           value={defaultHeadersJson}
           onChange={(e) => setDefaultHeadersJson(e.target.value)}

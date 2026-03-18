@@ -18,6 +18,20 @@ export async function readApiError(res: Response): Promise<ApiError> {
   return { code: "http_error", message: `HTTP ${res.status}` };
 }
 
+export function readRequestError(error: unknown): ApiError {
+  if (error instanceof Error) {
+    const message = error.message.trim();
+    if (message && message !== "Failed to fetch") {
+      return { code: "request_failed", message };
+    }
+  }
+
+  return {
+    code: "request_failed",
+    message: "Request failed. Check the server and try again.",
+  };
+}
+
 export async function apiFetch(
   path: string,
   init: RequestInit & { accessToken?: string | null } = {},
