@@ -55,9 +55,9 @@ frontend/
 ## UI Notes
 
 - Dashboard home shows quick actions, recent messages, recent failures, a getting-started list, and an unverified-email warning banner.
-- Messages page exposes search, group, and tag inputs, but the current backend only honors endpoint, priority, and time-range query params; batch delete also supports optional `ingest_endpoint_id`.
+- Messages page exposes endpoint, priority-range, and time-range filters; batch delete also supports optional `ingest_endpoint_id`.
 - Channels page supports create/delete for Bark, ntfy, MQTT, and Gotify plus live send-test calls.
-- An edit form exists, but the current summary-only `GET /api/channels/{id}` response does not return config, so edit hydration is not aligned end-to-end.
+- Channels page intentionally ships create/delete/test flows only; there is no channel edit surface.
 - Rules page supports create, preview/test, list, and delete; the backend has read/update APIs, but the UI does not expose edit flows.
 - Ingest endpoints page shows the key once at creation and provides copyable URL/curl examples; the backend has detail/rename routes, but the current UI only exposes create/list/revoke/archive.
 - Account page handles resend verification requests, change email, change password, and delete account.

@@ -5,6 +5,7 @@ import { readApiError, readJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 import type { Delivery, MessageDetail } from "@/lib/types";
+import { priorityBadgeClass } from "./messages/utils";
 
 const deliveryStatusBadgeClass: Record<Delivery["status"], string> = {
   queued: "border-border bg-card text-muted-foreground",
@@ -13,14 +14,6 @@ const deliveryStatusBadgeClass: Record<Delivery["status"], string> = {
   sent: "border-success/20 bg-success/10 text-success",
   failed: "border-destructive/20 bg-destructive/10 text-destructive",
 };
-
-function priorityBadgeClass(priority: number): string {
-  if (priority <= 1) return "border-border bg-muted text-muted-foreground";
-  if (priority === 2) return "border-info/20 bg-info/10 text-info";
-  if (priority === 4) return "border-warning/20 bg-warning/10 text-warning";
-  if (priority >= 5) return "border-destructive/20 bg-destructive/10 text-destructive";
-  return "border-border bg-card text-foreground";
-}
 
 export default function MessageDetailPage() {
   const auth = useAuth();

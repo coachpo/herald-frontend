@@ -12,7 +12,7 @@ pnpm dev
 
 Defaults:
 - frontend: http://localhost:3000
-- backend: baked into the build via `VITE_API_URL` (default `http://localhost:8100`), and called directly from the browser
+- backend: provided via `VITE_API_URL` and called directly from the browser; `./start.sh full` points it at the helper backend port (`http://localhost:38000`)
 
 ## UI (shadcn/ui)
 

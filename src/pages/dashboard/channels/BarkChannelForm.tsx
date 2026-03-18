@@ -1,13 +1,13 @@
-import { parseJsonObject } from "./utils";
+import { parseOptionalJsonObject } from "@/lib/json";
 
-export function looksLikeBarkDeviceKey(seg: string): boolean {
+function looksLikeBarkDeviceKey(seg: string): boolean {
   const s = (seg || "").trim();
   if (s.length < 16) return false;
   if (!/^[A-Za-z0-9_-]+$/.test(s)) return false;
   return /\d/.test(s);
 }
 
-export function trySplitBarkUrl(input: string): { serverBaseUrl: string; deviceKey: string } | null {
+function trySplitBarkUrl(input: string): { serverBaseUrl: string; deviceKey: string } | null {
   const raw = (input || "").trim();
   if (!raw) return null;
   let u: URL;
@@ -183,7 +183,7 @@ export function validateBarkConfig(state: Omit<BarkChannelFormProps, "canCreate"
     }
   }
 
-  const parsed = parseJsonObject(state.defaultPayloadJson);
+  const parsed = parseOptionalJsonObject(state.defaultPayloadJson);
   if (!parsed.ok) {
     return { ok: false, error: `Default payload JSON: ${parsed.error}` };
   }

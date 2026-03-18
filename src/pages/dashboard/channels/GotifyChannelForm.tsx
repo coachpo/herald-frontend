@@ -1,4 +1,4 @@
-import { parseJsonObject } from "./utils";
+import { parseOptionalJsonObject } from "@/lib/json";
 
 export interface GotifyChannelFormProps {
   canCreate: boolean;
@@ -114,7 +114,7 @@ export function validateGotifyConfig(state: Omit<GotifyChannelFormProps, "canCre
     }
     cfg.default_priority = priorityNum;
   }
-  const extrasResult = parseJsonObject(state.defaultExtrasJson);
+  const extrasResult = parseOptionalJsonObject(state.defaultExtrasJson);
   if (!extrasResult.ok) {
     return { ok: false, error: `Default extras JSON: ${extrasResult.error}` };
   }

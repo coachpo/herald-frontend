@@ -9,14 +9,12 @@ import { ChannelTestPanel, type ChannelTestResp } from "./ChannelTestPanel";
 export interface ChannelListItemProps {
   channel: Channel;
   canCreate: boolean;
-  onEdit: (id: string) => void;
   onDeleted: (id: string) => void;
 }
 
 export function ChannelListItem({
   channel,
   canCreate,
-  onEdit,
   onDeleted,
 }: ChannelListItemProps) {
   const auth = useAuth();
@@ -52,14 +50,6 @@ export function ChannelListItem({
             }}
           >
             Send test
-          </button>
-          <button
-            type="button"
-            className="whitespace-nowrap rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
-            disabled={!canCreate || deleting}
-            onClick={() => onEdit(channel.id)}
-          >
-            Edit
           </button>
           <button
             type="button"

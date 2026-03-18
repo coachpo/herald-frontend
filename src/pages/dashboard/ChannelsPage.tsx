@@ -5,7 +5,7 @@ import { authedFetch } from "@/lib/authed";
 import { useAuth } from "@/lib/auth";
 import type { Channel } from "@/lib/types";
 
-import { ChannelEditorCard } from "./channels/ChannelEditorCard";
+import { CreateChannelCard } from "./channels/CreateChannelCard";
 import { ChannelListItem } from "./channels/ChannelListItem";
 
 export default function ChannelsPage() {
@@ -15,7 +15,6 @@ export default function ChannelsPage() {
   const [items, setItems] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,12 +52,7 @@ export default function ChannelsPage() {
         </div>
       )}
 
-      <ChannelEditorCard
-        canCreate={canCreate}
-        editingId={editingId}
-        clearEditing={() => setEditingId(null)}
-        onSaved={() => void load()}
-      />
+      <CreateChannelCard canCreate={canCreate} onCreated={() => void load()} />
 
       <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3 text-sm font-semibold">Channels</div>
@@ -73,9 +67,8 @@ export default function ChannelsPage() {
                 key={c.id}
                 channel={c}
                 canCreate={canCreate}
-                onEdit={setEditingId}
                 onDeleted={(id) => {
-                  if (editingId === id) setEditingId(null);
+                  void id;
                   void load();
                 }}
               />

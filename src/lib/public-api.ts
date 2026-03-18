@@ -22,7 +22,7 @@ function normalizePublicApiUrl(raw: string): URL {
   return url;
 }
 
-export function getPublicApiOrigin(): string {
+function getPublicApiOrigin(): string {
   const url = normalizePublicApiUrl(import.meta.env.VITE_API_URL ?? "");
   return url.origin;
 }

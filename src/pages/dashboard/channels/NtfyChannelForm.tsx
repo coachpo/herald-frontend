@@ -1,4 +1,4 @@
-import { parseJsonObject } from "./utils";
+import { parseOptionalJsonObject } from "@/lib/json";
 
 export interface NtfyChannelFormProps {
   canCreate: boolean;
@@ -149,7 +149,7 @@ export function validateNtfyConfig(state: Omit<NtfyChannelFormProps, "canCreate"
   if (!state.topic.trim()) {
     return { ok: false, error: "Topic is required." };
   }
-  const parsed = parseJsonObject(state.defaultHeadersJson);
+  const parsed = parseOptionalJsonObject(state.defaultHeadersJson);
   if (!parsed.ok) {
     return { ok: false, error: `Default headers JSON: ${parsed.error}` };
   }

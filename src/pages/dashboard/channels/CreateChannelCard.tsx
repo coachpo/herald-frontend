@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { readApiError, readJson } from "@/lib/api";
+import { readApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { authedFetch } from "@/lib/authed";
 
@@ -10,60 +10,20 @@ import { MqttChannelForm } from "./MqttChannelForm";
 import { NtfyChannelForm } from "./NtfyChannelForm";
 import {
   buildChannelConfig,
-  type ChannelDetailResp,
   type ChannelType,
   useChannelFormState,
 } from "./formState";
 
-export interface ChannelEditorCardProps {
+export interface CreateChannelCardProps {
   canCreate: boolean;
-  editingId: string | null;
-  clearEditing: () => void;
-  onSaved: () => void;
+  onCreated: () => void;
 }
 
-export function ChannelEditorCard({
-  canCreate,
-  editingId,
-  clearEditing,
-  onSaved,
-}: ChannelEditorCardProps) {
+export function CreateChannelCard({ canCreate, onCreated }: CreateChannelCardProps) {
   const auth = useAuth();
   const form = useChannelFormState();
-  const { applyDetail, resetForm } = form;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!editingId) {
-      resetForm();
-      setError(null);
-      setSubmitting(false);
-      return;
-    }
-
-    let cancelled = false;
-    const loadDetail = async () => {
-      setError(null);
-      setSubmitting(true);
-      try {
-        const res = await authedFetch(auth, `/api/channels/${editingId}`, { method: "GET" });
-        if (!res.ok) {
-          if (!cancelled) setError((await readApiError(res)).message);
-          return;
-        }
-        const data = await readJson<ChannelDetailResp>(res);
-        if (!cancelled) applyDetail(data);
-      } finally {
-        if (!cancelled) setSubmitting(false);
-      }
-    };
-
-    void loadDetail();
-    return () => {
-      cancelled = true;
-    };
-  }, [applyDetail, auth, editingId, resetForm]);
 
   const submit = useCallback(async () => {
     setError(null);
@@ -80,10 +40,8 @@ export function ChannelEditorCard({
         return;
       }
 
-      const path = editingId ? `/api/channels/${editingId}` : "/api/channels";
-      const method = editingId ? "PATCH" : "POST";
-      const res = await authedFetch(auth, path, {
-        method,
+      const res = await authedFetch(auth, "/api/channels", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: form.channelType, name: form.name, config: config.config }),
       });
@@ -93,16 +51,15 @@ export function ChannelEditorCard({
       }
 
       form.resetForm();
-      clearEditing();
-      onSaved();
+      onCreated();
     } finally {
       setSubmitting(false);
     }
-  }, [auth, clearEditing, editingId, form, onSaved]);
+  }, [auth, form, onCreated]);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="text-sm font-semibold">{editingId ? "Edit channel" : "Create channel"}</div>
+      <div className="text-sm font-semibold">Create channel</div>
 
       {error && (
         <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/30 dark:bg-destructive/10">
@@ -119,7 +76,7 @@ export function ChannelEditorCard({
             className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
             value={form.channelType}
             onChange={(e) => form.setChannelType(e.target.value as ChannelType)}
-            disabled={!canCreate || submitting || Boolean(editingId)}
+            disabled={!canCreate || submitting}
           >
             <option value="bark">bark</option>
             <option value="ntfy">ntfy</option>
@@ -225,30 +182,14 @@ export function ChannelEditorCard({
       </div>
 
       <div className="mt-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            disabled={!canCreate || submitting}
-            onClick={() => void submit()}
-          >
-            {editingId ? "Save" : "Create"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-              disabled={submitting}
-              onClick={() => {
-                form.resetForm();
-                clearEditing();
-                setError(null);
-              }}
-            >
-              Cancel
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          disabled={!canCreate || submitting}
+          onClick={() => void submit()}
+        >
+          Create
+        </button>
 
         {!canCreate && (
           <div className="mt-2 text-xs text-warning">Verify your email to create channels.</div>

@@ -17,12 +17,9 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [q, setQ] = useState("");
   const [filterEndpointId, setFilterEndpointId] = useState("");
-  const [group, setGroup] = useState("");
   const [priorityMin, setPriorityMin] = useState("");
   const [priorityMax, setPriorityMax] = useState("");
-  const [tag, setTag] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -35,12 +32,9 @@ export default function MessagesPage() {
     setLoading(true);
     setError(null);
     const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
     if (filterEndpointId) params.set("ingest_endpoint_id", filterEndpointId);
-    if (group.trim()) params.set("group", group.trim());
     if (priorityMin) params.set("priority_min", priorityMin);
     if (priorityMax) params.set("priority_max", priorityMax);
-    if (tag.trim()) params.set("tag", tag.trim());
     if (fromDate) params.set("from", fromDate);
     if (toDate) params.set("to", toDate);
 
@@ -65,7 +59,7 @@ export default function MessagesPage() {
     setItems(mData.messages);
     setEndpoints(eData.endpoints);
     setLoading(false);
-  }, [auth, q, filterEndpointId, group, priorityMin, priorityMax, tag, fromDate, toDate]);
+  }, [auth, filterEndpointId, priorityMin, priorityMax, fromDate, toDate]);
 
   useEffect(() => {
     void load();
@@ -92,18 +86,12 @@ export default function MessagesPage() {
 
       <MessagesFiltersCard
         endpoints={endpoints}
-        q={q}
-        setQ={setQ}
         filterEndpointId={filterEndpointId}
         setFilterEndpointId={setFilterEndpointId}
-        group={group}
-        setGroup={setGroup}
         priorityMin={priorityMin}
         setPriorityMin={setPriorityMin}
         priorityMax={priorityMax}
         setPriorityMax={setPriorityMax}
-        tag={tag}
-        setTag={setTag}
         fromDate={fromDate}
         setFromDate={setFromDate}
         toDate={toDate}

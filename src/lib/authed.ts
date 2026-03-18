@@ -1,5 +1,4 @@
 import { apiFetch } from "@/lib/api";
-import type { ApiError } from "@/lib/types";
 
 export type AuthLike = {
   accessToken: string | null;
@@ -16,8 +15,4 @@ export async function authedFetch(
   const tok = await auth.refresh();
   if (!tok) return res1;
   return apiFetch(path, { ...init, accessToken: tok });
-}
-
-export function formatApiError(e: ApiError): string {
-  return e.details ? `${e.message}` : e.message;
 }

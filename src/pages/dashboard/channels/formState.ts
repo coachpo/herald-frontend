@@ -1,12 +1,6 @@
 import { useCallback, useState } from "react";
 
-import type {
-  BarkChannelConfig,
-  Channel,
-  GotifyChannelConfig,
-  MqttChannelConfig,
-  NtfyChannelConfig,
-} from "@/lib/types";
+import type { Channel } from "@/lib/types";
 
 import { validateBarkConfig } from "./BarkChannelForm";
 import { validateGotifyConfig } from "./GotifyChannelForm";
@@ -14,11 +8,6 @@ import { validateMqttConfig } from "./MqttChannelForm";
 import { validateNtfyConfig } from "./NtfyChannelForm";
 
 export type ChannelType = Channel["type"];
-
-export interface ChannelDetailResp {
-  channel: Channel;
-  config: BarkChannelConfig | NtfyChannelConfig | MqttChannelConfig | GotifyChannelConfig;
-}
 
 export function useChannelFormState() {
   const [channelType, setChannelType] = useState<ChannelType>("bark");
@@ -91,71 +80,6 @@ export function useChannelFormState() {
     setGotifyDefaultExtrasJson("{}");
   }, []);
 
-  const applyDetail = useCallback((data: ChannelDetailResp) => {
-    setChannelType(data.channel.type);
-    setName(data.channel.name ?? "");
-
-    if (data.channel.type === "bark") {
-      const cfg = data.config as BarkChannelConfig;
-      setBarkServerBaseUrl(cfg.server_base_url ?? "");
-      const keys = Array.isArray(cfg.device_keys) ? cfg.device_keys.filter(Boolean) : [];
-      if (keys.length > 0) {
-        setBarkUseDeviceKeys(true);
-        setBarkDeviceKeysText(keys.join("\n"));
-        setBarkDeviceKey("");
-      } else {
-        setBarkUseDeviceKeys(false);
-        setBarkDeviceKeysText("");
-        setBarkDeviceKey((cfg.device_key ?? "") || "");
-      }
-      setBarkDefaultPayloadJson(JSON.stringify(cfg.default_payload_json ?? {}, null, 2));
-      return;
-    }
-
-    if (data.channel.type === "ntfy") {
-      const cfg = data.config as NtfyChannelConfig;
-      setNtfyServerBaseUrl(cfg.server_base_url ?? "");
-      setNtfyTopic(cfg.topic ?? "");
-      const token = (cfg.access_token ?? "") || "";
-      const user = (cfg.username ?? "") || "";
-      const pass = (cfg.password ?? "") || "";
-      if (token.trim()) {
-        setNtfyAuthMode("bearer");
-      } else if (user.trim() || pass.trim()) {
-        setNtfyAuthMode("basic");
-      } else {
-        setNtfyAuthMode("none");
-      }
-      setNtfyAccessToken(token);
-      setNtfyUsername(user);
-      setNtfyPassword(pass);
-      setNtfyDefaultHeadersJson(JSON.stringify(cfg.default_headers_json ?? {}, null, 2));
-      return;
-    }
-
-    if (data.channel.type === "mqtt") {
-      const cfg = data.config as MqttChannelConfig;
-      setMqttBrokerHost(cfg.broker_host ?? "");
-      setMqttBrokerPort(String(cfg.broker_port ?? 1883));
-      setMqttTopic(cfg.topic ?? "");
-      setMqttUsername((cfg.username ?? "") || "");
-      setMqttPassword((cfg.password ?? "") || "");
-      setMqttTls(Boolean(cfg.tls));
-      setMqttTlsInsecure(Boolean(cfg.tls_insecure));
-      setMqttQos(String(cfg.qos ?? 0));
-      setMqttRetain(Boolean(cfg.retain));
-      setMqttClientId((cfg.client_id ?? "") || "");
-      setMqttKeepaliveSeconds(String(cfg.keepalive_seconds ?? 60));
-      return;
-    }
-
-    const cfg = data.config as GotifyChannelConfig;
-    setGotifyServerBaseUrl(cfg.server_base_url ?? "");
-    setGotifyAppToken(cfg.app_token ?? "");
-    setGotifyDefaultPriority(cfg.default_priority != null ? String(cfg.default_priority) : "");
-    setGotifyDefaultExtrasJson(JSON.stringify(cfg.default_extras_json ?? {}, null, 2));
-  }, []);
-
   return {
     channelType,
     setChannelType,
@@ -216,7 +140,6 @@ export function useChannelFormState() {
     gotifyDefaultExtrasJson,
     setGotifyDefaultExtrasJson,
     resetForm,
-    applyDetail,
   };
 }
 
