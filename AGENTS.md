@@ -47,8 +47,11 @@ frontend/
 - `apiFetch()` injects `Authorization` and always uses `credentials: "omit"`.
 - `authedFetch()` retries once after a successful refresh on `401`.
 - `buildPublicApiUrl()` preserves localhost HTTP, upgrades non-localhost HTTP to HTTPS, and `buildIngestUrl()` converts UUIDs to hex for ingest URLs.
+- Supported toolchain is Node `^24.0.0` with `pnpm@10.30.1`; there is no frontend test runner in `package.json`.
+- `components.json` uses shadcn/ui `new-york` style, `lucide` icons, and Tailwind v4 tokens from `src/globals.css`.
 - `pnpm dev` uses Vite port `3000`; `deploy/server.mjs` serves `dist/` on `3100`; `start.sh full` typically overrides Vite to `35173` and points `VITE_API_URL` at the helper backend port.
-- Forms use `useState` plus manual validation; there is no active frontend test runner.
+- `deploy/server.mjs` serves the built SPA with immutable asset caching and a `GET /health` endpoint.
+- Forms use `useState` plus manual validation; `pnpm lint` plus `pnpm build` are the only package verification steps.
 - Theme preference uses `localStorage` key `herald_theme` and `<html data-theme>`.
 - Forgot/reset/verify pages assume tokens arrive out of band; the current backend does not implement repo-local email delivery.
 
