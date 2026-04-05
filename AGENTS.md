@@ -22,6 +22,7 @@ frontend/
 │   ├── components/   # AppShell, AuthGate, forms, shadcn/ui primitives
 │   ├── layouts/      # AuthLayout, DashboardLayout
 │   ├── lib/          # api/auth/authed/public-api/types/utils
+│   │   └── AGENTS.md # client auth + API helper guidance
 │   ├── pages/        # auth pages + dashboard pages
 │   ├── router.tsx    # route tree
 │   ├── main.tsx      # BrowserRouter bootstrap
@@ -41,6 +42,7 @@ frontend/
 ## Key Patterns
 
 - `AuthLayout` and `DashboardLayout` both provide `AuthProvider`.
+- `DashboardLayout` composes `AuthProvider`, `AuthGate`, and `AppShell`; `AuthLayout` keeps the auth-only subtree lighter.
 - `AuthGate` triggers an immediate refresh on mount and redirects unauthenticated users to `/login?next=...`.
 - Refresh token lives in `sessionStorage` key `herald_refresh_token`; access token stays in React state.
 - JWT auto-refresh is scheduled 60 seconds before expiry.
@@ -49,11 +51,13 @@ frontend/
 - `buildPublicApiUrl()` preserves localhost HTTP, upgrades non-localhost HTTP to HTTPS, and `buildIngestUrl()` converts UUIDs to hex for ingest URLs.
 - Supported toolchain is Node `^24.0.0` with `pnpm@10.30.1`; there is no frontend test runner in `package.json`.
 - `components.json` uses shadcn/ui `new-york` style, `lucide` icons, and Tailwind v4 tokens from `src/globals.css`.
-- `pnpm dev` uses Vite port `3000`; `deploy/server.mjs` serves `dist/` on `3100`; `start.sh full` typically overrides Vite to `35173` and points `VITE_API_URL` at the helper backend port.
-- `deploy/server.mjs` serves the built SPA with immutable asset caching and a `GET /health` endpoint.
+- `pnpm dev` uses Vite port `3000` and proxies `/api`, `/health`, and `/admin` to `http://localhost:8000`.
+- `deploy/server.mjs` serves `dist/` on `3100` with SPA fallback, immutable asset caching, and a `GET /health` endpoint.
+- `start.sh full` overrides the usual Vite path and points `VITE_API_URL` at the helper backend port on `38000`.
 - Forms use `useState` plus manual validation; `pnpm lint` plus `pnpm build` are the only package verification steps.
 - Theme preference uses `localStorage` key `herald_theme` and `<html data-theme>`.
 - Forgot/reset/verify pages assume tokens arrive out of band; the current backend does not implement repo-local email delivery.
+- Descend into `src/lib/AGENTS.md` before changing auth storage, API helpers, or URL normalization logic.
 
 ## UI Notes
 
